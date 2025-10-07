@@ -1,5 +1,26 @@
+/**
+ * @fileoverview Configuração do Tailwind CSS para o projeto EndoData
+ * 
+ * @description Este arquivo contém todas as configurações personalizadas
+ * do Tailwind CSS, incluindo tema escuro/claro, cores customizadas,
+ * animações e configurações do shadcn/ui.
+ * 
+ * @author Victor Macêdo
+ * @since 1.0.0
+ */
+
 import type { Config } from "tailwindcss"
 
+/**
+ * Configuração principal do Tailwind CSS
+ * 
+ * @description Configuração completa incluindo:
+ * - Dark mode com classe CSS
+ * - Paleta de cores personalizada (shadcn/ui)
+ * - Animações e keyframes customizadas
+ * - Configurações de container responsivo
+ * - Integração com CSS variables para temas
+ */
 const config = {
   darkMode: ["class"],
   content: [

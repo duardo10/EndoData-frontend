@@ -1,3 +1,19 @@
+/**
+ * Global CSS - EndoData Frontend
+ * 
+ * Este arquivo contém os estilos globais da aplicação, incluindo:
+ * - Importações do Tailwind CSS
+ * - Variáveis CSS customizadas para temas (claro/escuro)
+ * - Definições de cores do design system
+ * - Reset CSS e estilos base para elementos HTML
+ * 
+ * @description Configuração completa do sistema de design
+ * baseado no shadcn/ui com suporte a tema escuro/claro
+ * 
+ * @author Victor Macêdo
+ * @since 1.0.0
+ */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

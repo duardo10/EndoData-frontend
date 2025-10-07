@@ -5,7 +5,47 @@ import { Moon, Sun, Menu } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
-export function Header() {
+/**
+ * Componente de cabeçalho da aplicação EndoData
+ * 
+ * @description Header responsivo com navegação principal, toggle de tema
+ * e menu hambúrguer para dispositivos móveis. Inclui funcionalidade
+ * de mudança de tema claro/escuro e navegação sticky.
+ * 
+ * @returns {React.ReactElement} Componente de header configurado
+ * 
+ * @features
+ * - Design responsivo com breakpoints
+ * - Toggle de tema claro/escuro animado
+ * - Navegação sticky com backdrop blur
+ * - Menu hambúrguer para mobile
+ * - Links de navegação com hover states
+ * - Acessibilidade com screen readers
+ * - Ícones animados do Lucide React
+ * 
+ * @example
+ * ```tsx
+ * import { Header } from '@/components/layout/Header'
+ * 
+ * function Layout() {
+ *   return (
+ *     <div>
+ *       <Header />
+ *       <main>{children}</main>
+ *     </div>
+ *   )
+ * }
+ * ```
+ * 
+ * @dependencies
+ * - next-themes - Gerenciamento de tema
+ * - lucide-react - Ícones SVG
+ * - Next.js Link - Navegação otimizada
+ * 
+ * @author EndoData Team
+ * @since 1.0.0
+ */
+export function Header(): React.ReactElement {
   const { theme, setTheme } = useTheme();
 
   return (
