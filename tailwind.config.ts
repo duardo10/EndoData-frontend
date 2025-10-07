@@ -58,6 +58,12 @@ const config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      fontFamily: {
+        roboto: ['var(--font-roboto)', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        'xs': '0px 0px 1px rgba(23, 26, 31, 0.07), 0px 0px 2px rgba(23, 26, 31, 0.12)',
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
