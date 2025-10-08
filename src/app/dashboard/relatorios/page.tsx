@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { UnderDevelopment } from '@/components/ui/UnderDevelopment'
 
 /**
  * Página de Relatórios
@@ -11,16 +11,23 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
  * @returns {React.ReactElement} Página de relatórios
  */
 export default function Relatorios(): React.ReactElement {
+  const features = [
+    'Dashboard com métricas em tempo real',
+    'Relatórios de atendimentos por período',
+    'Estatísticas de pacientes ativos',
+    'Análise de prescrições mais comuns',
+    'Gráficos interativos de performance',
+    'Exportação em PDF e Excel',
+    'Relatórios personalizáveis',
+    'Comparativos mensais e anuais'
+  ]
+
   return (
-    <DashboardLayout>
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Relatórios</h1>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600">
-            Página de relatórios e estatísticas em desenvolvimento...
-          </p>
-        </div>
-      </div>
-    </DashboardLayout>
+    <UnderDevelopment
+      title="Relatórios e Estatísticas"
+      description="Central de business intelligence com relatórios detalhados, gráficos interativos e análises para tomada de decisão."
+      features={features}
+      eta="Sprint 5 - Fevereiro 2026"
+    />
   )
 }

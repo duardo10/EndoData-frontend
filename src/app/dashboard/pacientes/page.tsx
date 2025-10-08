@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { UnderDevelopment } from '@/components/ui/UnderDevelopment'
 
 /**
  * Página de Pacientes
@@ -11,16 +11,23 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
  * @returns {React.ReactElement} Página de pacientes
  */
 export default function Pacientes(): React.ReactElement {
+  const features = [
+    'Cadastro completo de pacientes',
+    'Prontuário eletrônico integrado',
+    'Histórico médico detalhado',
+    'Agendamento de consultas',
+    'Upload de exames e documentos',
+    'Busca avançada e filtros',
+    'Relatórios por paciente',
+    'Integração com convênios'
+  ]
+
   return (
-    <DashboardLayout>
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Pacientes</h1>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600">
-            Página de gerenciamento de pacientes em desenvolvimento...
-          </p>
-        </div>
-      </div>
-    </DashboardLayout>
+    <UnderDevelopment
+      title="Gestão de Pacientes"
+      description="Sistema completo para cadastro, acompanhamento e gerenciamento de pacientes com prontuário eletrônico integrado."
+      features={features}
+      eta="Sprint 1 - Outubro 2025"
+    />
   )
 }
