@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -34,6 +35,8 @@ import { Logo } from '@/components/ui/logo'
  * @since 1.0.0
  */
 export default function LoginForm() {
+  const router = useRouter()
+  
   // Estados do formulário
   /** Estado para armazenar o email/usuário inserido */
   const [email, setEmail] = useState<string>('')
@@ -70,6 +73,8 @@ export default function LoginForm() {
     // Simular delay de autenticação - substituir por chamada real da API
     setTimeout(() => {
       setIsLoading(false)
+      // Redirecionar para o dashboard após login bem-sucedido
+      router.push('/dashboard')
     }, 1000)
   }
 
