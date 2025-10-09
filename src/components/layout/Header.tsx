@@ -1,90 +1,102 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, Menu } from 'lucide-react';
+import { Moon, Sun, Menu, X, Home, Users, Pill, FileText, Settings, HelpCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
-/**
- * Componente de cabeçalho da aplicação EndoData
- * 
- * @description Header responsivo com navegação principal, toggle de tema
- * e menu hambúrguer para dispositivos móveis. Inclui funcionalidade
- * de mudança de tema claro/escuro e navegação sticky.
- * 
- * @returns {React.ReactElement} Componente de header configurado
- * 
- * @features
- * - Design responsivo com breakpoints
- * - Toggle de tema claro/escuro animado
- * - Navegação sticky com backdrop blur
- * - Menu hambúrguer para mobile
- * - Links de navegação com hover states
- * - Acessibilidade com screen readers
- * - Ícones animados do Lucide React
- * 
- * @example
- * ```tsx
- * import { Header } from '@/components/layout/Header'
- * 
- * function Layout() {
- *   return (
- *     <div>
- *       <Header />
- *       <main>{children}</main>
- *     </div>
- *   )
- * }
- * ```
- * 
- * @dependencies
- * - next-themes - Gerenciamento de tema
- * - lucide-react - Ícones SVG
- * - Next.js Link - Navegação otimizada
- * 
- * @author EndoData Team
- * @since 1.0.0
- */
 export function Header(): React.ReactElement {
   const { theme, setTheme } = useTheme();
+  const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
 
-  return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold">MyApp</span>
+  const toggleMenu = () => setIsOpen(!isOpen);
+  
+  // Detecta se estamos na página de login
+  const isLoginPage = pathname === '/';
+
+  // NavLinks responsivo que se adapta ao tamanho da tela
+  const NavLinks = () => {
+    const navItems = [
+      { href: "/", icon: Home, label: "Início" },
+      { href: "/pacientes", icon: Users, label: "Pacientes" },
+      { href: "/prescricao", icon: Pill, label: "Prescrição" },
+      { href: "/relatorios", icon: FileText, label: "Relatórios" },
+      { href: "/configuracoes", icon: Settings, label: "Configurações" },
+      { href: "/ajuda", icon: HelpCircle, label: "Teste" },
+    ];
+
+    return (
+      <div className="flex flex-col space-y-2">
+        {navItems.map(({ href, icon: Icon, label }) => (
+          <Link
+            key={href}
+            href={href}
+            className="group flex items-center gap-3 p-2 rounded-lg text-sm font-medium text-foreground hover:text-primary hover:bg-accent nav-item-hover"
+            title={label} // Tooltip para telas pequenas
+          >
+            <Icon className="h-5 w-5 flex-shrink-0" />
+            <span className="hidden sm:block md:block lg:block truncate">
+              {label}
+            </span>
           </Link>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
-              Home
-            </Link>
-            <Link href="/about" className="text-sm font-medium hover:text-primary transition-colors">
-              About
-            </Link>
-            <Link href="/contact" className="text-sm font-medium hover:text-primary transition-colors">
-              Contact
-            </Link>
-          </nav>
+        ))}
+      </div>
+    );
+  };
+
+  // Header simplificado para página de login
+  if (isLoginPage) {
+    return (
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-colors duration-300">
+        <div className="container flex h-16 items-center justify-center">
+          <Link href="/" className="flex items-center space-x-2">
+            <span className="text-xl font-bold text-primary">EndoData</span>
+          </Link>
         </div>
-        
-        <div className="flex items-center gap-2">
+      </header>
+    );
+  }
+
+  // Header completo para outras páginas (lateral responsivo)
+  return (
+    <div className="h-full flex flex-col">
+      {/* Logo responsivo */}
+      <div className="p-2 sm:p-4 md:p-6 border-b border-border">
+        <Link href="/" className="flex items-center justify-center sm:justify-start">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0 logo-icon">
+            <span className="text-white font-bold text-sm">E</span>
+          </div>
+          <span className="hidden sm:block md:block lg:block ml-2 text-lg font-bold text-primary truncate">
+            EndoData
+          </span>
+        </Link>
+      </div>
+
+      {/* Navegação responsiva */}
+      <nav className="flex-1 p-2 sm:p-3 md:p-4">
+        <NavLinks />
+      </nav>
+
+      {/* Botões de controle responsivos */}
+      <div className="p-2 sm:p-3 md:p-4 border-t border-border">
+        <div className="flex items-center justify-center sm:justify-start">
+          {/* Botão de tema */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="relative"
+            className="relative w-full sm:w-auto"
+            title="Alternar tema"
           >
-            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Menu</span>
+            <Sun className="h-4 w-4 sm:h-5 sm:w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-4 w-4 sm:h-5 sm:w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <span className="sr-only">Alternar tema</span>
           </Button>
         </div>
       </div>
-    </header>
+    </div>
   );
 }

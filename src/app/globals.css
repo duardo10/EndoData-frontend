@@ -21,13 +21,17 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 222.2 84% 4.9%; /* Texto principal (escuro) */
+    
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
+
+    /* CORRIGIDO: Cor primária agora é um azul vibrante para o hover */
+    --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 210 40% 98%;
+
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
@@ -44,13 +48,17 @@
 
   .dark {
     --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --foreground: 210 40% 98%; /* Texto principal (claro) */
+
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
+
+    /* CORRIGIDO: Cor primária com bom contraste para o tema escuro */
+    --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
+
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
@@ -64,7 +72,6 @@
     --ring: 212.7 26.8% 83.9%;
   }
 }
-
 @layer base {
   * {
     @apply border-border;
@@ -76,4 +83,27 @@
 
 .font-roboto {
   font-family: var(--font-roboto), system-ui, sans-serif;
+}
+
+/* Animações personalizadas para o header lateral */
+@layer components {
+  .sidebar-transition {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .nav-item-hover {
+    @apply hover:bg-accent/50 hover:scale-105;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .logo-icon {
+    @apply transition-transform duration-300 hover:scale-110;
+  }
+}
+
+/* Melhorias para telas muito pequenas */
+@media (max-width: 640px) {
+  .sidebar-mobile {
+    @apply shadow-lg;
+  }
 }
