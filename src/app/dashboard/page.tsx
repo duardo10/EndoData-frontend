@@ -35,7 +35,6 @@ export default function Dashboard(): React.ReactElement {
         {/* Seção de Boas-vindas */}
         <WelcomeSection 
           userName="Doutor João"
-          userAvatar="/avatars/doutor-joao.jpg"
         />
 
         {/* Ações Rápidas */}
