@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Trash2, Plus, X } from 'lucide-react'
 import { CreateReceiptInput, CreateReceiptItemInput, ReceiptStatus } from '@/types/receipt'
+import { PatientService, Patient as PatientType } from '@/services/patientService'
 
 interface Patient {
   id: string
@@ -32,22 +33,31 @@ export function CreateReceiptModal({
     status: ReceiptStatus.PENDING,
     items: [{ description: '', quantity: 1, unitPrice: 0 }]
   })
-  const [patients, setPatients] = useState<Patient[]>([])
+  const [patients, setPatients] = useState<PatientType[]>([])
   const [loadingPatients, setLoadingPatients] = useState(true)
 
-  // Simular carregamento de pacientes (substituir por chamada real da API)
+  // Carregar pacientes da API
   useEffect(() => {
-    const mockPatients: Patient[] = [
-      { id: '3041a16e-8023-45a3-be41-96d5170d0644', name: 'João da Silva', email: 'joao.silva@email.com', cpf: '11144477735' },
-      { id: 'patient-2', name: 'Maria Santos', email: 'maria@email.com', cpf: '222.333.444-55' },
-      { id: 'patient-3', name: 'Pedro Costa', email: 'pedro@email.com', cpf: '333.444.555-66' }
-    ]
+    const fetchPatients = async () => {
+      try {
+        setLoadingPatients(true)
+        const data = await PatientService.getPatients()
+        setPatients(data.patients || [])
+      } catch (error) {
+        console.error('Erro ao buscar pacientes:', error)
+        // Fallback para dados mockados  
+        setPatients([
+          { id: '3041a16e-8023-45a3-be41-96d5170d0644', name: 'João da Silva', email: 'joao.silva@email.com', cpf: '11144477735' }
+        ])
+      } finally {
+        setLoadingPatients(false)
+      }
+    }
     
-    setTimeout(() => {
-      setPatients(mockPatients)
-      setLoadingPatients(false)
-    }, 500)
-  }, [])
+    if (isOpen) {
+      fetchPatients()
+    }
+  }, [isOpen])
 
   const addItem = () => {
     setFormData(prev => ({

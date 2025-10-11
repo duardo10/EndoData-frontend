@@ -5,9 +5,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Eye, Edit, Download, FileText, Search, Calendar, Filter, Loader2, Trash2, Plus } from 'lucide-react'
 import { useReceitas } from '@/hooks/useReceitas'
-import { ReceiptStatus, StatusDisplayMap, StatusColorMap } from '@/types/receipt'
 import { CreateReceiptModal } from '@/components/receipts/CreateReceiptModal'
 
 export default function ReceitasPage() {
@@ -15,95 +13,60 @@ export default function ReceitasPage() {
     receipts,
     loading,
     error,
-    currentPage,
-    totalPages,
-    totalReceipts,
-    filters,
-    updateFilters,
     refreshReceipts,
     createReceipt,
-    deleteReceipt,
-    exportToPDF,
-    exportToExcel
+    updateFilters
   } = useReceitas()
 
-  const [showFilters, setShowFilters] = useState(false)
-  const [selectedReceipts, setSelectedReceipts] = useState<string[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [filters, setFilters] = useState({
+    paciente: '',
+    status: 'Todos',
+    periodo: ''
+  })
+  const [selectedReceipts, setSelectedReceipts] = useState<string[]>([])
 
-  // Handle export to PDF - usar o método do hook que exporta todas as receitas filtradas
-  const handleExportToPDF = async () => {
+  const handleCreateReceipt = async (receiptData: any) => {
     try {
-      await exportToPDF()
-      console.log('Receitas exportadas para PDF com sucesso!')
+      await createReceipt(receiptData)
+      await refreshReceipts()
     } catch (error) {
-      console.error('Erro ao exportar receitas:', error)
+      console.error('Erro ao criar receita:', error)
+      throw error
     }
   }
 
-  // Handle bulk export - usar o método do hook para exportar CSV
-  const handleBulkExport = async () => {
-    if (selectedReceipts.length === 0) {
-      console.warn('Selecione pelo menos uma receita para exportar')
-      return
+  const getStatusBadge = (status: string) => {
+    const statusMap: { [key: string]: { label: string; className: string } } = {
+      'active': { label: 'Ativa', className: 'bg-blue-100 text-blue-800' },
+      'completed': { label: 'Renovada', className: 'bg-green-100 text-green-800' },
+      'expired': { label: 'Expirada', className: 'bg-gray-100 text-gray-800' }
     }
     
-    try {
-      await exportToExcel()
-      console.log('Receitas exportadas com sucesso!')
-      setSelectedReceipts([])
-    } catch (error) {
-      console.error('Erro ao exportar receitas:', error)
-    }
+    const statusInfo = statusMap[status] || { label: 'Ativa', className: 'bg-blue-100 text-blue-800' }
+    
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.className}`}>
+        {statusInfo.label}
+      </span>
+    )
   }
 
-  // Handle delete
-  const handleDelete = async (receiptId: string) => {
-    if (confirm('Tem certeza que deseja excluir esta receita?')) {
-      await deleteReceipt(receiptId)
-    }
-  }
-
-  // Toggle receipt selection
   const toggleReceiptSelection = (receiptId: string) => {
     setSelectedReceipts(prev => 
-      prev.includes(receiptId) 
+      prev.includes(receiptId)
         ? prev.filter(id => id !== receiptId)
         : [...prev, receiptId]
     )
   }
 
-  // Format date
-  const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString('pt-BR')
-  }
-
-  // Get status badge classes
-  const getStatusBadgeClass = (status: ReceiptStatus) => {
-    const baseClass = 'px-2 py-1 rounded-full text-xs font-medium'
-    const colorClass = StatusColorMap[status] || 'bg-gray-100 text-gray-800'
-    return `${baseClass} ${colorClass}`
-  }
-
-  // Handle filter updates
-  const handleFilterChange = (key: string, value: string) => {
-    updateFilters({ [key]: value })
-  }
-
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    updateFilters({ page })
-  }
-
-  if (error && (error.fetch || error.update || error.delete)) {
-    const errorMessage = error.fetch || error.update || error.delete || 'Erro desconhecido'
-    
+  if (error && error.fetch) {
     return (
       <DashboardLayout>
         <div className="p-6">
           <Card className="p-8 text-center">
             <h2 className="text-xl font-semibold text-red-600 mb-2">Erro ao carregar receitas</h2>
-            <p className="text-gray-600 mb-4">{errorMessage}</p>
+            <p className="text-gray-600 mb-4">{error.fetch}</p>
             <Button onClick={refreshReceipts} className="bg-[#2074E9] hover:bg-[#104CA0]">
               Tentar novamente
             </Button>
@@ -113,162 +76,116 @@ export default function ReceitasPage() {
     )
   }
 
-  // Handle create receipt
-  const handleCreateReceipt = async (receiptData: any) => {
-    try {
-      await createReceipt(receiptData)
-      // Refresh the list to show the new receipt
-      await refreshReceipts()
-    } catch (error) {
-      console.error('Erro ao criar receita:', error)
-      throw error
-    }
-  }
-
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
-        {/* Header da página */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Receitas Médicas</h1>
-            <p className="text-gray-600">
-              Gerencie e visualize receitas médicas do sistema ({totalReceipts} receitas)
-            </p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="bg-[#2074E9] hover:bg-[#104CA0] text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Receita
-            </Button>
-          </div>
+        {/* Título da página */}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Receitas Médicas Recentes</h1>
         </div>
 
         {/* Seção de Filtros */}
         <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold flex items-center">
-              <Filter className="w-5 h-5 mr-2 text-[#2074E9]" />
-              Filtrar Receitas
-            </h2>
-            <Button
-              variant="ghost"
-              onClick={() => setShowFilters(!showFilters)}
-              className="text-sm"
+          <h2 className="text-lg font-semibold mb-4">Filtrar Receitas</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Filtro por Paciente */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Paciente
+              </label>
+              <Input
+                type="text"
+                placeholder="Nome do Paciente"
+                value={filters.paciente}
+                onChange={(e) => setFilters(prev => ({ ...prev, paciente: e.target.value }))}
+                className="w-full"
+              />
+            </div>
+
+            {/* Filtro por Status */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Todos">Todos</option>
+                <option value="Ativa">Ativa</option>
+                <option value="Renovada">Renovada</option>
+                <option value="Expirada">Expirada</option>
+              </select>
+            </div>
+
+            {/* Filtro por Período */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Período
+              </label>
+              <Input
+                type="date"
+                placeholder="Selecionar data"
+                value={filters.periodo}
+                onChange={(e) => setFilters(prev => ({ ...prev, periodo: e.target.value }))}
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          {/* Botões de ação dos filtros */}
+          <div className="flex gap-3 mt-4">
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => {
+                // Mapeamento correto dos status
+                let statusValue: string | undefined = undefined
+                if (filters.status === 'Ativa') statusValue = 'pending'
+                else if (filters.status === 'Renovada') statusValue = 'paid'
+                else if (filters.status === 'Expirada') statusValue = 'cancelled'
+                
+                // Aplicar filtros - atualizar os filtros do hook useReceitas
+                updateFilters({
+                  status: statusValue as any,
+                  startDate: filters.periodo,
+                  // patientId: seria necessário buscar ID do paciente pelo nome
+                  // Por enquanto vamos implementar busca simples
+                })
+              }}
             >
-              {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+              Aplicar Filtros
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => {
+                setFilters({ paciente: '', status: 'Todos', periodo: '' })
+                // Limpar filtros no hook também
+                updateFilters({})
+              }}
+            >
+              Limpar Filtros
             </Button>
           </div>
-          
-          {showFilters && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Período</label>
-                <select 
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2074E9] focus:border-[#2074E9]"
-                  value={filters.period || ''}
-                  onChange={(e) => handleFilterChange('period', e.target.value)}
-                >
-                  <option value="">Selecionar período</option>
-                  <option value="day">Hoje</option>
-                  <option value="week">Esta semana</option>
-                  <option value="month">Este mês</option>
-                  <option value="year">Este ano</option>
-                  <option value="custom">Personalizado</option>
-                </select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Data Inicial</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    type="date"
-                    value={filters.startDate || ''}
-                    onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Data Final</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    type="date"
-                    value={filters.endDate || ''}
-                    onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Status</label>
-                <select 
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2074E9] focus:border-[#2074E9]"
-                  value={filters.status || ''}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                >
-                  <option value="">Todos os status</option>
-                  {Object.entries(StatusDisplayMap).map(([key, value]) => (
-                    <option key={key} value={key}>{value}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
         </Card>
 
-        {/* Ações em lote */}
-        {selectedReceipts.length > 0 && (
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">
-                {selectedReceipts.length} receita(s) selecionada(s)
-              </span>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleBulkExport}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Exportar Selecionadas
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setSelectedReceipts([])}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* Lista de Receitas */}
+        {/* Lista de Prescrições */}
         <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Lista de Receitas</h2>
-            {loading && (
-              <div className="flex items-center text-sm text-gray-600">
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Carregando...
-              </div>
-            )}
-          </div>
+          <h2 className="text-lg font-semibold mb-4">Lista de Prescrições</h2>
           
+          {loading && (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="mt-2 text-gray-600">Carregando receitas...</p>
+            </div>
+          )}
+
+          {/* Tabela de receitas */}
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+            <table className="min-w-full table-auto">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">
                     <input 
                       type="checkbox" 
                       className="rounded"
@@ -279,15 +196,14 @@ export default function ReceitasPage() {
                           setSelectedReceipts([])
                         }
                       }}
-                      checked={selectedReceipts.length === receipts.length && receipts.length > 0}
                     />
                   </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Paciente</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Médico</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Data de Emissão</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Itens</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Ações</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Título da Receita</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Paciente</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Médico</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Data</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -302,114 +218,84 @@ export default function ReceitasPage() {
                       />
                     </td>
                     <td className="py-3 px-4">
-                      <div>
-                        <div className="font-medium text-gray-900">{receipt.patient?.name || 'N/A'}</div>
-                        <div className="text-sm text-gray-500">ID: {receipt.patientId}</div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">{receipt.user?.name || 'N/A'}</td>
-                    <td className="py-3 px-4 text-gray-600">{formatDate(receipt.date)}</td>
-                    <td className="py-3 px-4">
-                      <span className={getStatusBadgeClass(receipt.status)}>
-                        {StatusDisplayMap[receipt.status]}
+                      <span className="font-medium text-gray-900">
+                        {receipt.items && receipt.items.length > 0 
+                          ? `Receita para ${receipt.items[0].description}` 
+                          : 'Receita Médica'
+                        }
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-gray-600">
-                      {receipt.items?.length || 0} item(s)
+                    <td className="py-3 px-4 text-gray-700">
+                      {receipt.patient?.name || 'N/A'}
+                    </td>
+                    <td className="py-3 px-4 text-gray-700">
+                      {receipt.user?.name || 'N/A'}
+                    </td>
+                    <td className="py-3 px-4 text-gray-700">
+                      {new Date(receipt.date).toLocaleDateString('pt-BR')}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-900">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-green-600 hover:text-green-900"
-                          onClick={() => handleExportToPDF()}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-red-600 hover:text-red-900"
-                          onClick={() => handleDelete(receipt.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                      {getStatusBadge(receipt.status)}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex gap-2">
+                        <button className="text-gray-600 hover:text-gray-900" title="Visualizar">
+                          👁️
+                        </button>
+                        <button className="text-gray-600 hover:text-gray-900" title="Editar">
+                          ✏️
+                        </button>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            
+
             {receipts.length === 0 && !loading && (
               <div className="text-center py-8 text-gray-500">
-                <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <p>Nenhuma receita encontrada</p>
               </div>
             )}
           </div>
         </Card>
 
-        {/* Paginação */}
-        {totalPages > 1 && (
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                Página {currentPage} de {totalPages} ({totalReceipts} receitas no total)
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === 1}
-                  onClick={() => handlePageChange(currentPage - 1)}
-                >
-                  Anterior
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === totalPages}
-                  onClick={() => handlePageChange(currentPage + 1)}
-                >
-                  Próxima
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
-
         {/* Opções de Exportação */}
         <Card className="p-6">
           <h2 className="text-lg font-semibold mb-4">Opções de Exportação</h2>
-          <div className="flex flex-wrap gap-4">
+          <div className="flex gap-4">
             <Button 
-              className="bg-red-600 hover:bg-red-700 text-white"
-              onClick={handleBulkExport}
-              disabled={selectedReceipts.length === 0}
+              className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
+              onClick={async () => {
+                try {
+                  alert('Funcionalidade de exportação PDF em desenvolvimento. Endpoint /api/receipts/export/pdf não implementado no backend.')
+                  // await exportToPDF()
+                } catch (error) {
+                  console.error('Erro ao exportar PDF:', error)
+                }
+              }}
             >
-              <Download className="w-4 h-4 mr-2" />
-              Exportar Selecionadas para PDF
+              <span>📄</span>
+              Exportar para PDF
             </Button>
             <Button 
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={() => exportToExcel()}
+              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+              onClick={async () => {
+                try {
+                  alert('Funcionalidade de exportação CSV em desenvolvimento. Endpoint /api/receipts/export/csv não implementado no backend.')
+                  // await exportToCSV()
+                } catch (error) {
+                  console.error('Erro ao exportar CSV:', error)
+                }
+              }}
             >
-              <Download className="w-4 h-4 mr-2" />
-              Exportar Todas (CSV)
+              <span>📊</span>
+              Exportar para DOCX
             </Button>
           </div>
         </Card>
       </div>
       
-      {/* Create Receipt Modal */}
       <CreateReceiptModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
