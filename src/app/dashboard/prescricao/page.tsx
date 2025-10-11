@@ -1,210 +1,173 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus, FileText, Download } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { usePrescriptions } from '@/hooks/usePrescriptions'
-import { CreatePrescriptionModal } from '@/components/prescriptions/CreatePrescriptionModal'
-import { ViewPrescriptionModal } from '@/components/prescriptions/ViewPrescriptionModal'
-import { PrescriptionTable } from '@/components/prescriptions/PrescriptionTable'
-import { Prescription, CreatePrescriptionInput, PrescriptionStatus } from '@/types/prescription'
+import { useState } from 'react'
+import { DashboardLayout } from '@/components/layout/DashboardLayout'
 
-export default function PrescricaoPage() {
-  const {
-    prescriptions,
-    loading,
-    error,
-    createPrescription,
-    updatePrescription,
-    deletePrescription,
-    refreshPrescriptions
-  } = usePrescriptions()
+export default function CriarNovaPrescricao() {
+  const [medication, setMedication] = useState('')
+  const [dosage, setDosage] = useState('')
+  const [frequency, setFrequency] = useState('')
+  const [instructions, setInstructions] = useState('')
+  const [patientSearch, setPatientSearch] = useState('')
+  const [observations, setObservations] = useState('')
 
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showViewModal, setShowViewModal] = useState(false)
-  const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null)
-  const [creating, setCreating] = useState(false)
-
-  useEffect(() => {
-    refreshPrescriptions()
-  }, [refreshPrescriptions])
-
-  const handleCreatePrescription = async (data: CreatePrescriptionInput) => {
-    try {
-      setCreating(true)
-      await createPrescription(data)
-      setShowCreateModal(false)
-    } catch (error) {
-      console.error('Erro ao criar prescrição:', error)
-    } finally {
-      setCreating(false)
-    }
-  }
-
-  const handleViewPrescription = (prescription: Prescription) => {
-    setSelectedPrescription(prescription)
-    setShowViewModal(true)
-  }
-
-  const handleEditPrescription = (prescription: Prescription) => {
-    // TODO: Implementar modal de edição
-    console.log('Editando prescrição:', prescription.id)
-  }
-
-  const handleDeletePrescription = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir esta prescrição?')) {
-      try {
-        await deletePrescription(id)
-      } catch (error) {
-        console.error('Erro ao excluir prescrição:', error)
-      }
-    }
-  }
-
-  const handleExportPrescription = (prescription: Prescription) => {
-    // TODO: Implementar exportação PDF
-    console.log('Exportando prescrição:', prescription.id)
-  }
-
-  if (error) {
-    return (
-      <div className="p-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="text-red-800 font-medium mb-2">Erro ao carregar prescrições</h3>
-          <p className="text-red-600">{error.fetch || 'Erro desconhecido'}</p>
-          <Button 
-            onClick={() => refreshPrescriptions()} 
-            className="mt-3"
-            variant="outline"
-          >
-            Tentar novamente
-          </Button>
-        </div>
-      </div>
-    )
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log('Registrando prescrição...', {
+      medication,
+      dosage,
+      frequency,
+      instructions,
+      patientSearch,
+      observations
+    })
   }
 
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Prescrições</h1>
-            <p className="text-gray-600 mt-1">
-              Gerencie as prescrições médicas dos pacientes
-            </p>
+    <DashboardLayout>
+      <div className="flex-1 space-y-6 p-6">
+        <h1 className="text-2xl font-semibold text-gray-900">Criar Nova Prescrição</h1>
+        
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Detalhes da Prescrição */}
+          <div className="bg-white rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Detalhes da Prescrição</h2>
           </div>
-          
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              className="flex items-center gap-2"
-              disabled={prescriptions.length === 0}
-            >
-              <Download className="w-4 h-4" />
-              Exportar Lista
-            </Button>
+
+          {/* Detalhes do Medicamento */}
+          <div className="bg-white rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-medium text-gray-900 mb-6">Detalhes do Medicamento</h2>
             
-            <Button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
+            <div className="space-y-6">
+              {/* Nome do Medicamento */}
+              <div>
+                <label htmlFor="medication" className="block text-sm font-medium text-gray-700 mb-2">
+                  Nome do Medicamento
+                </label>
+                <input
+                  type="text"
+                  id="medication"
+                  value={medication}
+                  onChange={(e) => setMedication(e.target.value)}
+                  placeholder="Ex: Amoxicilina"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              {/* Dosagem */}
+              <div>
+                <label htmlFor="dosage" className="block text-sm font-medium text-gray-700 mb-2">
+                  Dosagem
+                </label>
+                <div className="flex">
+                  <input
+                    type="text"
+                    id="dosage"
+                    value={dosage}
+                    onChange={(e) => setDosage(e.target.value)}
+                    placeholder="Ex: 500"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <span className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm rounded-r-md">
+                    mg
+                  </span>
+                </div>
+              </div>
+
+              {/* Frequência */}
+              <div>
+                <label htmlFor="frequency" className="block text-sm font-medium text-gray-700 mb-2">
+                  Frequência
+                </label>
+                <select
+                  id="frequency"
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Selecione a frequência</option>
+                  <option value="1x">1x ao dia</option>
+                  <option value="2x">2x ao dia</option>
+                  <option value="3x">3x ao dia</option>
+                  <option value="4x">4x ao dia</option>
+                  <option value="6x">6x ao dia</option>
+                  <option value="8x">8x ao dia</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Instruções de Uso */}
+          <div className="bg-white rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-medium text-gray-900 mb-6">Instruções de Uso</h2>
+            
+            <div>
+              <label htmlFor="instructions" className="block text-sm font-medium text-gray-700 mb-2">
+                Instruções Adicionais
+              </label>
+              <textarea
+                id="instructions"
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                placeholder="Ex: Tomar com alimentos, evitar álcool. Não exceder a dose diária."
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Selecionar Paciente */}
+          <div className="bg-white rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-medium text-gray-900 mb-6">Selecionar Paciente</h2>
+            
+            <div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  value={patientSearch}
+                  onChange={(e) => setPatientSearch(e.target.value)}
+                  placeholder="Buscar por nome ou CPF..."
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Observações */}
+          <div className="bg-white rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-medium text-gray-900 mb-6">Observações</h2>
+            
+            <div>
+              <label htmlFor="observations" className="block text-sm font-medium text-gray-700 mb-2">
+                Observações para o Paciente
+              </label>
+              <textarea
+                id="observations"
+                value={observations}
+                onChange={(e) => setObservations(e.target.value)}
+                placeholder="Ex: Retornar em 7 dias para acompanhamento. Em caso de reações adversas, procurar atendimento médico imediatamente."
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Botão de Registrar */}
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors"
             >
-              <Plus className="w-4 h-4" />
-              Nova Prescrição
-            </Button>
+              Registrar Prescrição
+            </button>
           </div>
-        </div>
+        </form>
       </div>
-
-      {/* Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <FileText className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total</p>
-              <p className="text-2xl font-bold text-gray-900">{prescriptions.length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <FileText className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Ativas</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {prescriptions.filter((p: Prescription) => p.status === PrescriptionStatus.ACTIVE).length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <FileText className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Rascunho</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {prescriptions.filter((p: Prescription) => p.status === PrescriptionStatus.DRAFT).length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-gray-100 rounded-lg">
-              <FileText className="w-6 h-6 text-gray-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Finalizadas</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {prescriptions.filter((p: Prescription) => p.status === PrescriptionStatus.COMPLETED).length}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabela de Prescrições */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">Lista de Prescrições</h2>
-        </div>
-        <div className="p-6">
-          <PrescriptionTable
-            prescriptions={prescriptions}
-            loading={loading.fetching}
-            onView={handleViewPrescription}
-            onEdit={handleEditPrescription}
-            onDelete={handleDeletePrescription}
-            onExport={handleExportPrescription}
-          />
-        </div>
-      </div>
-
-      {/* Modais */}
-      <CreatePrescriptionModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSubmit={handleCreatePrescription}
-        loading={creating}
-      />
-
-      <ViewPrescriptionModal
-        isOpen={showViewModal}
-        onClose={() => setShowViewModal(false)}
-        prescription={selectedPrescription}
-        onExport={handleExportPrescription}
-      />
-    </div>
+    </DashboardLayout>
   )
 }

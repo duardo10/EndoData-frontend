@@ -4,333 +4,321 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Trash2, Plus, X } from 'lucide-react'
-import { 
-  CreatePrescriptionInput, 
-  CreatePrescriptionMedicationInput, 
-  PrescriptionStatus,
-  PrescriptionStatusDisplayMap 
-} from '@/types/prescription'
-import { PatientService, Patient } from '@/services/patientService'
+import { X, Plus, Trash2 } from 'lucide-react'
+import { Patient, PatientService } from '@/services/patientService'
+import { CreatePrescriptionInput, PrescriptionStatus, CreatePrescriptionMedicationInput } from '@/types/prescription'
+import { PrescriptionService } from '@/services/prescriptionService'
+import { getCurrentUserId } from '@/lib/jwt-utils'
 
 interface CreatePrescriptionModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (prescription: CreatePrescriptionInput) => Promise<void>
-  loading?: boolean
+  onSuccess: () => void
 }
 
-export function CreatePrescriptionModal({ 
-  isOpen, 
-  onClose, 
-  onSubmit, 
-  loading = false 
-}: CreatePrescriptionModalProps) {
+export default function CreatePrescriptionModal({ isOpen, onClose, onSuccess }: CreatePrescriptionModalProps) {
   const [patients, setPatients] = useState<Patient[]>([])
-  const [isLoadingPatients, setIsLoadingPatients] = useState(false)
-  
-  const [formData, setFormData] = useState<CreatePrescriptionInput>({
-    patientId: '',
-    status: PrescriptionStatus.DRAFT,
-    notes: '',
-    medications: [{
+  const [selectedPatientId, setSelectedPatientId] = useState<string>('')
+  const [status, setStatus] = useState<PrescriptionStatus>(PrescriptionStatus.ACTIVE)
+  const [notes, setNotes] = useState('')
+  const [medications, setMedications] = useState<CreatePrescriptionMedicationInput[]>([
+    {
       medicationName: '',
       dosage: '',
       frequency: '',
       duration: ''
-    }]
-  })
+    }
+  ])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingPatients, setIsLoadingPatients] = useState(false)
 
-  const [errors, setErrors] = useState<{[key: string]: string}>({})
-
-  // Buscar pacientes
+  // Carregar lista de pacientes quando o modal abrir
   useEffect(() => {
     if (isOpen) {
-      fetchPatients()
+      loadPatients()
     }
   }, [isOpen])
 
-  const fetchPatients = async () => {
+  const loadPatients = async () => {
     try {
       setIsLoadingPatients(true)
       const response = await PatientService.getPatients()
-      setPatients(response.patients)
+      setPatients(response.patients || [])
     } catch (error) {
-      console.error('Erro ao buscar pacientes:', error)
+      console.error('Erro ao carregar pacientes:', error)
     } finally {
       setIsLoadingPatients(false)
     }
   }
 
-  const validateForm = (): boolean => {
-    const newErrors: {[key: string]: string} = {}
+  const addMedication = () => {
+    setMedications([
+      ...medications,
+      {
+        medicationName: '',
+        dosage: '',
+        frequency: '',
+        duration: ''
+      }
+    ])
+  }
 
-    if (!formData.patientId) {
-      newErrors.patientId = 'Selecione um paciente'
+  const removeMedication = (index: number) => {
+    if (medications.length > 1) {
+      const newMedications = medications.filter((_, i) => i !== index)
+      setMedications(newMedications)
     }
+  }
 
-    if (formData.medications.length === 0) {
-      newErrors.medications = 'Adicione pelo menos um medicamento'
+  const updateMedication = (index: number, field: keyof CreatePrescriptionMedicationInput, value: string) => {
+    const newMedications = [...medications]
+    newMedications[index] = {
+      ...newMedications[index],
+      [field]: value
     }
-
-    formData.medications.forEach((medication, index) => {
-      if (!medication.medicationName.trim()) {
-        newErrors[`medication_${index}_name`] = 'Nome do medicamento é obrigatório'
-      }
-      if (!medication.dosage.trim()) {
-        newErrors[`medication_${index}_dosage`] = 'Dosagem é obrigatória'
-      }
-      if (!medication.frequency.trim()) {
-        newErrors[`medication_${index}_frequency`] = 'Frequência é obrigatória'
-      }
-      if (!medication.duration.trim()) {
-        newErrors[`medication_${index}_duration`] = 'Duração é obrigatória'
-      }
-    })
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    setMedications(newMedications)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!validateForm()) {
+    if (!selectedPatientId) {
+      alert('Por favor, selecione um paciente')
+      return
+    }
+
+    // Validar medicamentos
+    const validMedications = medications.filter(med => 
+      med.medicationName.trim() && med.dosage.trim() && med.frequency.trim()
+    )
+
+    if (validMedications.length === 0) {
+      alert('Por favor, adicione pelo menos um medicamento válido')
       return
     }
 
     try {
-      await onSubmit(formData)
-      handleClose()
+      setIsLoading(true)
+      
+      // Obter userId do token JWT
+      const userId = getCurrentUserId()
+      if (!userId) {
+        alert('Erro: usuário não autenticado')
+        return
+      }
+
+      const prescriptionData: CreatePrescriptionInput = {
+        patientId: selectedPatientId,
+        userId: userId,
+        status,
+        notes: notes.trim() || undefined,
+        medications: validMedications
+      }
+
+      await PrescriptionService.createPrescription(prescriptionData)
+      
+      // Resetar formulário
+      setSelectedPatientId('')
+      setStatus(PrescriptionStatus.ACTIVE)
+      setNotes('')
+      setMedications([{
+        medicationName: '',
+        dosage: '',
+        frequency: '',
+        duration: ''
+      }])
+      
+      onSuccess()
+      onClose()
     } catch (error) {
       console.error('Erro ao criar prescrição:', error)
+      alert('Erro ao criar prescrição. Tente novamente.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handleClose = () => {
-    setFormData({
-      patientId: '',
-      status: PrescriptionStatus.DRAFT,
-      notes: '',
-      medications: [{
+    if (!isLoading) {
+      setSelectedPatientId('')
+      setStatus(PrescriptionStatus.ACTIVE)
+      setNotes('')
+      setMedications([{
         medicationName: '',
         dosage: '',
         frequency: '',
         duration: ''
-      }]
-    })
-    setErrors({})
-    onClose()
-  }
-
-  const addMedication = () => {
-    setFormData(prev => ({
-      ...prev,
-      medications: [...prev.medications, {
-        medicationName: '',
-        dosage: '',
-        frequency: '',
-        duration: ''
-      }]
-    }))
-  }
-
-  const removeMedication = (index: number) => {
-    if (formData.medications.length > 1) {
-      setFormData(prev => ({
-        ...prev,
-        medications: prev.medications.filter((_, i) => i !== index)
-      }))
+      }])
+      onClose()
     }
-  }
-
-  const updateMedication = (index: number, field: keyof CreatePrescriptionMedicationInput, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      medications: prev.medications.map((med, i) => 
-        i === index ? { ...med, [field]: value } : med
-      )
-    }))
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/50" 
+        onClick={handleClose}
+      />
+      
+      {/* Modal */}
+      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
+        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold">Nova Prescrição</h2>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-full"
+            disabled={isLoading}
           >
-            <X className="w-5 h-5" />
-          </button>
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Seleção de Paciente */}
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="patient">Paciente *</Label>
-            <select
-              id="patient"
-              value={formData.patientId}
-              onChange={(e) => setFormData(prev => ({ ...prev, patientId: e.target.value }))}
-              className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-              disabled={isLoadingPatients}
+            <select 
+              value={selectedPatientId} 
+              onChange={(e) => setSelectedPatientId(e.target.value)}
+              disabled={isLoadingPatients || isLoading}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">
-                {isLoadingPatients ? 'Carregando pacientes...' : 'Selecione um paciente'}
+                {isLoadingPatients ? "Carregando pacientes..." : "Selecione um paciente"}
               </option>
-              {patients.map(patient => (
+              {patients.map((patient) => (
                 <option key={patient.id} value={patient.id}>
-                  {patient.name} - {patient.cpf || patient.email}
+                  {patient.name} - {patient.cpf}
                 </option>
               ))}
             </select>
-            {errors.patientId && (
-              <p className="text-red-500 text-sm mt-1">{errors.patientId}</p>
-            )}
           </div>
 
           {/* Status */}
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
-            <select
-              id="status"
-              value={formData.status}
-              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as PrescriptionStatus }))}
-              className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            <select 
+              value={status} 
+              onChange={(e) => setStatus(e.target.value as PrescriptionStatus)}
+              disabled={isLoading}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              {Object.entries(PrescriptionStatusDisplayMap).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
+              <option value={PrescriptionStatus.ACTIVE}>Ativa</option>
+              <option value={PrescriptionStatus.SUSPENDED}>Suspensa</option>
+              <option value={PrescriptionStatus.COMPLETED}>Concluída</option>
+              <option value={PrescriptionStatus.DRAFT}>Rascunho</option>
             </select>
           </div>
 
           {/* Observações */}
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="notes">Observações</Label>
             <textarea
               id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Instruções gerais para o paciente..."
-              className="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Observações adicionais sobre a prescrição..."
               rows={3}
+              disabled={isLoading}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           {/* Medicamentos */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
               <Label>Medicamentos *</Label>
               <Button
                 type="button"
-                onClick={addMedication}
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-2"
+                onClick={addMedication}
+                disabled={isLoading}
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="h-4 w-4 mr-2" />
                 Adicionar Medicamento
               </Button>
             </div>
 
-            {formData.medications.map((medication, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4">
-                <div className="flex items-center justify-between mb-3">
+            {medications.map((medication, index) => (
+              <div key={index} className="p-4 border rounded-lg space-y-4">
+                <div className="flex items-center justify-between">
                   <h4 className="font-medium">Medicamento {index + 1}</h4>
-                  {formData.medications.length > 1 && (
+                  {medications.length > 1 && (
                     <Button
                       type="button"
-                      onClick={() => removeMedication(index)}
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      className="text-red-600 hover:text-red-900"
+                      onClick={() => removeMedication(index)}
+                      disabled={isLoading}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor={`medication-name-${index}`}>Nome do Medicamento *</Label>
+                  <div className="space-y-2">
+                    <Label>Nome do Medicamento *</Label>
                     <Input
-                      id={`medication-name-${index}`}
                       value={medication.medicationName}
                       onChange={(e) => updateMedication(index, 'medicationName', e.target.value)}
                       placeholder="Ex: Paracetamol"
+                      disabled={isLoading}
                     />
-                    {errors[`medication_${index}_name`] && (
-                      <p className="text-red-500 text-sm mt-1">{errors[`medication_${index}_name`]}</p>
-                    )}
                   </div>
 
-                  <div>
-                    <Label htmlFor={`dosage-${index}`}>Dosagem *</Label>
+                  <div className="space-y-2">
+                    <Label>Dosagem *</Label>
                     <Input
-                      id={`dosage-${index}`}
                       value={medication.dosage}
                       onChange={(e) => updateMedication(index, 'dosage', e.target.value)}
                       placeholder="Ex: 500mg"
+                      disabled={isLoading}
                     />
-                    {errors[`medication_${index}_dosage`] && (
-                      <p className="text-red-500 text-sm mt-1">{errors[`medication_${index}_dosage`]}</p>
-                    )}
                   </div>
 
-                  <div>
-                    <Label htmlFor={`frequency-${index}`}>Frequência *</Label>
+                  <div className="space-y-2">
+                    <Label>Frequência *</Label>
                     <Input
-                      id={`frequency-${index}`}
                       value={medication.frequency}
                       onChange={(e) => updateMedication(index, 'frequency', e.target.value)}
-                      placeholder="Ex: 3x ao dia"
+                      placeholder="Ex: 8/8h"
+                      disabled={isLoading}
                     />
-                    {errors[`medication_${index}_frequency`] && (
-                      <p className="text-red-500 text-sm mt-1">{errors[`medication_${index}_frequency`]}</p>
-                    )}
                   </div>
 
-                  <div>
-                    <Label htmlFor={`duration-${index}`}>Duração *</Label>
+                  <div className="space-y-2">
+                    <Label>Duração</Label>
                     <Input
-                      id={`duration-${index}`}
                       value={medication.duration}
                       onChange={(e) => updateMedication(index, 'duration', e.target.value)}
                       placeholder="Ex: 7 dias"
+                      disabled={isLoading}
                     />
-                    {errors[`medication_${index}_duration`] && (
-                      <p className="text-red-500 text-sm mt-1">{errors[`medication_${index}_duration`]}</p>
-                    )}
                   </div>
                 </div>
               </div>
             ))}
-
-            {errors.medications && (
-              <p className="text-red-500 text-sm mt-1">{errors.medications}</p>
-            )}
           </div>
 
           {/* Botões */}
-          <div className="flex gap-3 pt-4 border-t">
+          <div className="flex justify-end space-x-2 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={loading}
+              disabled={isLoading}
             >
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {loading ? 'Criando...' : 'Criar Prescrição'}
+            <Button type="submit" disabled={isLoading || !selectedPatientId}>
+              {isLoading ? 'Criando...' : 'Criar Prescrição'}
             </Button>
           </div>
         </form>

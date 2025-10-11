@@ -99,6 +99,7 @@ export interface Prescription {
  */
 export interface CreatePrescriptionInput {
   patientId: string
+  userId: string
   status: PrescriptionStatus
   notes?: string
   medications: CreatePrescriptionMedicationInput[]
