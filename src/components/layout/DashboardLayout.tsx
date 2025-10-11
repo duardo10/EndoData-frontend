@@ -12,7 +12,8 @@ import {
   HelpCircle,
   Bell,
   Menu,
-  X
+  X,
+  Receipt
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
@@ -42,6 +43,11 @@ const menuItems = [
     icon: FileText,
     label: 'Prescrição',
     href: '/dashboard/prescricao',
+  },
+  {
+    icon: Receipt,
+    label: 'Receitas',
+    href: '/dashboard/receitas',
   },
   {
     icon: BarChart3,
