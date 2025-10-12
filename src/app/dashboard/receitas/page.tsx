@@ -1,14 +1,84 @@
+/**
+ * @fileoverview Página de gerenciamento de receitas médicas.
+ * 
+ * Esta página permite aos médicos visualizar, criar, filtrar e gerenciar
+ * receitas médicas, incluindo funcionalidades de busca por paciente,
+ * filtragem por status e período, além de ações em lote.
+ * 
+ * @author EndoData Team
+ * @since 1.0.0
+ */
+
 'use client'
 
+// =====================================
+// IMPORTS
+// =====================================
+
+// React hooks
 import React, { useState } from 'react'
+
+// Componentes de layout e UI
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+
+// Hooks customizados e componentes específicos
 import { useReceitas } from '@/hooks/useReceitas'
 import { CreateReceiptModal } from '@/components/receipts/CreateReceiptModal'
 
+// =====================================
+// INTERFACES E TIPOS
+// =====================================
+
+/**
+ * Interface para filtros de receitas
+ */
+interface ReceitaFilters {
+  /** Nome ou CPF do paciente */
+  paciente: string
+  /** Status da receita (Todos, Ativa, Renovada, Expirada) */
+  status: string
+  /** Período de busca */
+  periodo: string
+}
+
+/**
+ * Mapeamento de status da receita para exibição
+ */
+interface StatusMapping {
+  [key: string]: {
+    /** Label de exibição do status */
+    label: string
+    /** Classes CSS para estilização */
+    className: string
+  }
+}
+
+// =====================================
+// COMPONENTE PRINCIPAL
+// =====================================
+
+/**
+ * Componente principal da página de receitas médicas.
+ * 
+ * Fornece interface completa para gerenciamento de receitas, incluindo:
+ * - Listagem de receitas com paginação
+ * - Filtros por paciente, status e período
+ * - Criação de novas receitas via modal
+ * - Seleção múltipla para ações em lote
+ * - Visualização de detalhes e status das receitas
+ * - Integração com hooks customizados para gerenciamento de estado
+ * 
+ * @returns {JSX.Element} Interface de gerenciamento de receitas
+ */
 export default function ReceitasPage() {
+  // =====================================
+  // HOOKS E ESTADOS
+  // =====================================
+  
+  // Hook customizado para gerenciamento de receitas
   const {
     receipts,
     loading,
@@ -18,14 +88,31 @@ export default function ReceitasPage() {
     updateFilters
   } = useReceitas()
 
+  // Estados de controle da interface
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [filters, setFilters] = useState({
+  const [selectedReceipts, setSelectedReceipts] = useState<string[]>([])
+  
+  // Estado dos filtros de busca
+  const [filters, setFilters] = useState<ReceitaFilters>({
     paciente: '',
     status: 'Todos',
     periodo: ''
   })
-  const [selectedReceipts, setSelectedReceipts] = useState<string[]>([])
 
+  // =====================================
+  // FUNÇÕES DE MANIPULAÇÃO
+  // =====================================
+
+  /**
+   * Manipula a criação de uma nova receita.
+   * 
+   * Chama o serviço de criação de receita e atualiza a lista
+   * após sucesso. Propaga erros para tratamento pelo componente modal.
+   * 
+   * @param {any} receiptData - Dados da receita a ser criada
+   * @returns {Promise<void>}
+   * @throws {Error} Quando ocorre erro na criação da receita
+   */
   const handleCreateReceipt = async (receiptData: any) => {
     try {
       await createReceipt(receiptData)
@@ -36,8 +123,18 @@ export default function ReceitasPage() {
     }
   }
 
+  /**
+   * Gera um badge visual para o status da receita.
+   * 
+   * Converte o status interno da receita em um elemento visual
+   * com cores e texto apropriados. Fornece fallback para status
+   * não reconhecidos.
+   * 
+   * @param {string} status - Status da receita (active, completed, expired)
+   * @returns {JSX.Element} Badge estilizado com o status da receita
+   */
   const getStatusBadge = (status: string) => {
-    const statusMap: { [key: string]: { label: string; className: string } } = {
+    const statusMap: StatusMapping = {
       'active': { label: 'Ativa', className: 'bg-blue-100 text-blue-800' },
       'completed': { label: 'Renovada', className: 'bg-green-100 text-green-800' },
       'expired': { label: 'Expirada', className: 'bg-gray-100 text-gray-800' }
@@ -52,6 +149,16 @@ export default function ReceitasPage() {
     )
   }
 
+  /**
+   * Alterna a seleção de uma receita na lista de seleções múltiplas.
+   * 
+   * Se a receita já estiver selecionada, remove da seleção.
+   * Se não estiver selecionada, adiciona à lista de seleções.
+   * Utilizada para ações em lote nas receitas.
+   * 
+   * @param {string} receiptId - ID único da receita
+   * @returns {void}
+   */
   const toggleReceiptSelection = (receiptId: string) => {
     setSelectedReceipts(prev => 
       prev.includes(receiptId)
@@ -60,6 +167,10 @@ export default function ReceitasPage() {
     )
   }
 
+  // =====================================
+  // TRATAMENTO DE ERRO
+  // =====================================
+  
   if (error && error.fetch) {
     return (
       <DashboardLayout>
@@ -76,6 +187,10 @@ export default function ReceitasPage() {
     )
   }
 
+  // =====================================
+  // RENDERIZAÇÃO PRINCIPAL
+  // =====================================
+  
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
@@ -139,18 +254,17 @@ export default function ReceitasPage() {
             <Button 
               className="bg-blue-600 hover:bg-blue-700 text-white"
               onClick={() => {
-                // Mapeamento correto dos status
+                // Mapeamento de status da interface para valores do backend
                 let statusValue: string | undefined = undefined
                 if (filters.status === 'Ativa') statusValue = 'pending'
                 else if (filters.status === 'Renovada') statusValue = 'paid'
                 else if (filters.status === 'Expirada') statusValue = 'cancelled'
                 
-                // Aplicar filtros - atualizar os filtros do hook useReceitas
+                // Aplica filtros através do hook customizado
                 updateFilters({
                   status: statusValue as any,
                   startDate: filters.periodo,
-                  // patientId: seria necessário buscar ID do paciente pelo nome
-                  // Por enquanto vamos implementar busca simples
+                  // TODO: Implementar busca por ID do paciente baseado no nome
                 })
               }}
             >
@@ -159,8 +273,8 @@ export default function ReceitasPage() {
             <Button 
               variant="outline"
               onClick={() => {
+                // Limpa filtros locais e do hook
                 setFilters({ paciente: '', status: 'Todos', periodo: '' })
-                // Limpar filtros no hook também
                 updateFilters({})
               }}
             >
@@ -304,3 +418,8 @@ export default function ReceitasPage() {
     </DashboardLayout>
   )
 }
+
+// =====================================
+// EXPORTAÇÃO PADRÃO
+// =====================================
+// Componente exportado como padrão para uso em roteamento do Next.js
