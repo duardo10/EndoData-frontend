@@ -23,6 +23,15 @@ import {
  */
 export class PrescriptionService {
   /**
+   * Busca todas as prescrições (método simples)
+   * @returns Promise<Prescription[]>
+   */
+  static async getAllPrescriptions(): Promise<Prescription[]> {
+    const response = await api.get('/prescriptions')
+    return response.data as Prescription[]
+  }
+
+  /**
    * Busca todas as prescrições
    * @param filters - Filtros opcionais para busca
    * @returns Promise<PrescriptionsPaginatedResponse>

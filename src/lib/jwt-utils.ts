@@ -30,17 +30,28 @@ export function decodeJWT(token: string): JWTPayload | null {
     // Separa as partes do token
     const parts = cleanToken.split('.')
     if (parts.length !== 3) {
+      console.error('Token JWT inválido: número incorreto de partes')
       return null
     }
     
     // Decodifica o payload (segunda parte)
     const payload = parts[1]
     
-    // Adiciona padding se necessário
-    const paddedPayload = payload + '='.repeat((4 - payload.length % 4) % 4)
+    // Converte base64url para base64 padrão
+    let base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
     
-    // Decodifica de base64
-    const decoded = atob(paddedPayload)
+    // Adiciona padding se necessário
+    while (base64.length % 4) {
+      base64 += '='
+    }
+    
+    // Decodifica de base64 usando uma abordagem mais robusta
+    const decoded = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    )
     
     return JSON.parse(decoded) as JWTPayload
   } catch (error) {
