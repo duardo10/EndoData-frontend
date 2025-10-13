@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { api, getErrorMessage } from '@/lib/axios'
 
 /**
  * Página de Cálculos Clínicos
@@ -19,37 +20,56 @@ export default function CalculosClinicos(): React.ReactElement {
   const [sexo, setSexo] = useState<'masculino' | 'feminino'>('masculino')
   const [praticaAtividade, setPraticaAtividade] = useState<'sim' | 'nao'>('nao')
   const [metabolismoBasal, setMetabolismoBasal] = useState<number | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const calcularMetabolismo = (): void => {
+
+  const calcularMetabolismo = async (): Promise<void> => {
+    setError(null)
+    setLoading(true)
     const pesoNum = parseFloat(peso)
     const alturaNum = parseFloat(altura)
     const idadeNum = parseInt(idade)
 
     if (isNaN(pesoNum) || isNaN(alturaNum) || isNaN(idadeNum) || pesoNum <= 0 || alturaNum <= 0 || idadeNum <= 0) {
-      alert('Por favor, preencha todos os campos corretamente')
+      setError('Por favor, preencha todos os campos corretamente')
+      setLoading(false)
       return
     }
 
-    // Cálculo do Metabolismo Basal usando a fórmula de Harris-Benedict revisada
-    let tmb: number
-    if (sexo === 'masculino') {
-      tmb = 88.362 + (13.397 * pesoNum) + (4.799 * alturaNum) - (5.677 * idadeNum)
-    } else {
-      tmb = 447.593 + (9.247 * pesoNum) + (3.098 * alturaNum) - (4.330 * idadeNum)
+    // Mock: usar patientId e userId fixos até integração completa
+    const patientId = 'mock-patient-id'
+    const userId = 'mock-user-id'
+
+    // Backend espera altura em metros, converter se necessário
+    const alturaEmMetros = alturaNum > 10 ? alturaNum / 100 : alturaNum
+    const inputData: Record<string, any> = {
+      weight: pesoNum,
+      height: alturaEmMetros,
+      age: idadeNum,
+      sex: sexo === 'masculino' ? 'M' : 'F',
+      activityLevel: praticaAtividade === 'sim' ? 1.55 : 1.2,
     }
 
-    // Ajuste se pratica atividade física regular
-    if (praticaAtividade === 'sim') {
-      tmb = tmb * 1.55 // Fator de atividade moderada
-    } else {
-      tmb = tmb * 1.2 // Fator sedentário
+    try {
+      const { data } = await api.post(`/patients/${patientId}/calculations`, {
+        calculationType: 'TDEE',
+        inputData,
+        userId,
+      })
+      // O backend retorna um objeto com results.tdee
+      setMetabolismoBasal(data?.results?.tdee || null)
+    } catch (err) {
+      setError(getErrorMessage(err))
+      setMetabolismoBasal(null)
+    } finally {
+      setLoading(false)
     }
-
-    setMetabolismoBasal(Math.round(tmb * 100) / 100)
   }
 
   const fecharResultado = (): void => {
     setMetabolismoBasal(null)
+    setError(null)
   }
 
   return (
@@ -187,9 +207,16 @@ export default function CalculosClinicos(): React.ReactElement {
                     METABOLISMO BASAL =
                   </span>
                   <span className="text-lg font-bold text-gray-900">
-                    {metabolismoBasal !== null ? `${metabolismoBasal.toFixed(2)} Kcal` : '0.00 Kcal'}
+                    {loading
+                      ? 'Calculando...'
+                      : metabolismoBasal !== null
+                        ? `${metabolismoBasal.toFixed(2)} Kcal`
+                        : '0.00 Kcal'}
                   </span>
                 </div>
+                {error && (
+                  <div className="mt-2 text-red-600 text-sm">{error}</div>
+                )}
               </div>
 
               {/* Botões */}

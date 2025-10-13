@@ -23,7 +23,7 @@ interface ApiErrorResponse {
  * Instância configurada do Axios
  */
 export const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
