@@ -1,11 +1,14 @@
 'use client'
 
 import React, { useState } from 'react'
+import { toast } from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Logo } from '@/components/ui/logo'
+import api, { getErrorMessage } from '@/lib/axios'
+import { AuthTokens } from '@/lib/auth-utils'
 
 /**
  * Componente de formulário de login para o sistema EndoData
@@ -44,8 +47,11 @@ export default function LoginForm() {
   /** Estado para armazenar a senha inserida */
   const [password, setPassword] = useState<string>('')
   
+
   /** Estado para controlar o loading durante autenticação */
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  /** Estado para mensagem de erro */
+  const [error, setError] = useState<string | null>(null)
 
   /**
    * Manipulador de submissão do formulário de login
@@ -66,16 +72,34 @@ export default function LoginForm() {
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
     setIsLoading(true)
-    
-    // Log para desenvolvimento - remover em produção
-    console.log('Login attempt:', { email, password })
-    
-    // Simular delay de autenticação - substituir por chamada real da API
-    setTimeout(() => {
+    setError(null)
+    try {
+      const TOKEN_KEY = process.env.NEXT_PUBLIC_TOKEN_KEY || 'endodata_token'
+      const { data } = await api.post('/auth/login', { email, password })
+      if (data?.access_token) {
+        // Salva token usando utilitário padrão (compatível com AuthGuard)
+        // Define expiração para 8h a partir de agora (ajuste conforme backend)
+        const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
+        AuthTokens.setToken(data.access_token, expiresAt);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setIsLoading(false);
+        toast.success('Login realizado com sucesso!');
+        router.push('/dashboard');
+      } else {
+        setError('Ocorreu um erro inesperado. Tente novamente.');
+        setIsLoading(false);
+      }
+    } catch (err: any) {
+      // Não mostrar erro no console
+      if (err?.response?.status === 400 || err?.response?.status === 401) {
+        setError('E-mail ou senha inválidos.')
+      } else if (err?.response?.status === 404) {
+        setError('Serviço de autenticação indisponível. Tente novamente mais tarde.')
+      } else {
+        setError('Erro ao tentar autenticar. Tente novamente mais tarde.')
+      }
       setIsLoading(false)
-      // Redirecionar para o dashboard após login bem-sucedido
-      router.push('/dashboard')
-    }, 1000)
+    }
   }
 
   return (
@@ -135,6 +159,13 @@ export default function LoginForm() {
               className="w-full h-[49px] px-3 font-roboto text-[14px] leading-[22px] font-normal bg-white border border-[#DEE1E6] rounded-[6px] outline-none focus:border-[#2074E9] hover:border-[#DEE1E6] focus:ring-1 focus:ring-[#2074E9] focus:ring-offset-0 transition-colors"
             />
           </div>
+
+          {/* Exibir erro de autenticação */}
+          {error && (
+            <div className="absolute top-[390px] left-[32px] right-[32px] text-red-600 text-sm font-roboto" role="alert" aria-live="assertive">
+              {error}
+            </div>
+          )}
 
           {/* Link Esqueceu Senha */}
           <div className="absolute top-[422px] right-[32px]">
