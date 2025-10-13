@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Logo } from '@/components/ui/logo'
 import api, { getErrorMessage } from '@/lib/axios'
+import { AuthTokens } from '@/lib/auth-utils'
 
 /**
  * Componente de formulário de login para o sistema EndoData
@@ -76,14 +77,17 @@ export default function LoginForm() {
       const TOKEN_KEY = process.env.NEXT_PUBLIC_TOKEN_KEY || 'endodata_token'
       const { data } = await api.post('/auth/login', { email, password })
       if (data?.access_token) {
-        localStorage.setItem(TOKEN_KEY, data.access_token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        setIsLoading(false)
-        toast.success('Login realizado com sucesso!')
-        setTimeout(() => router.push('/dashboard'), 800)
+        // Salva token usando utilitário padrão (compatível com AuthGuard)
+        // Define expiração para 8h a partir de agora (ajuste conforme backend)
+        const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
+        AuthTokens.setToken(data.access_token, expiresAt);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setIsLoading(false);
+        toast.success('Login realizado com sucesso!');
+        router.push('/dashboard');
       } else {
-        setError('Ocorreu um erro inesperado. Tente novamente.')
-        setIsLoading(false)
+        setError('Ocorreu um erro inesperado. Tente novamente.');
+        setIsLoading(false);
       }
     } catch (err: any) {
       // Não mostrar erro no console

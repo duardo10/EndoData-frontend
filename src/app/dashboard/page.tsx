@@ -5,6 +5,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { WelcomeSection } from '@/components/dashboard/WelcomeSection'
 import { QuickActions } from '@/components/dashboard/QuickActions'
 import { MainNavigation } from '@/components/dashboard/MainNavigation'
+import { AuthGuard } from '@/components/auth/AuthGuard'
 
 /**
  * Página principal do dashboard EndoData
@@ -30,20 +31,20 @@ import { MainNavigation } from '@/components/dashboard/MainNavigation'
  */
 export default function Dashboard(): React.ReactElement {
   return (
-    <DashboardLayout>
-      <div className="flex-1 space-y-6 p-6">
-        {/* Seção de Boas-vindas */}
-        <WelcomeSection 
-          userName="Doutor João"
-          userAvatar="/avatars/doutor-joao.jpg"
-        />
-
-        {/* Ações Rápidas */}
-        <QuickActions />
-
-        {/* Navegação Principal */}
-        <MainNavigation />
-      </div>
-    </DashboardLayout>
+    <AuthGuard>
+      <DashboardLayout>
+        <div className="flex-1 space-y-6 p-6">
+          {/* Seção de Boas-vindas */}
+          <WelcomeSection 
+            userName="Doutor João"
+            userAvatar="/avatars/doutor-joao.jpg"
+          />
+          {/* Ações Rápidas */}
+          <QuickActions />
+          {/* Navegação Principal */}
+          <MainNavigation />
+        </div>
+      </DashboardLayout>
+    </AuthGuard>
   )
 }
