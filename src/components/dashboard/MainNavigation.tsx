@@ -24,7 +24,7 @@ const navigationItems: NavigationItem[] = [
     icon: Users,
     title: 'Pacientes',
     description: 'Gerencie e visualize cadastros de pacientes, históricos e consultas.',
-    href: '/dashboard/pacientes',
+    href: '/dashboard/pacientes/novo',
     actionLabel: 'Abrir'
   },
   {

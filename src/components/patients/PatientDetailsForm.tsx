@@ -67,59 +67,35 @@ interface PatientHistoryEntry {
  * Estado inicial dos dados pessoais
  */
 const initialPersonalInfo: PersonalInfo = {
-  nomeCompleto: 'Maria Silva Oliveira',
-  dataNascimento: '1996-12-02',
-  cpf: '123.456.789-00',
-  telefone: '(11) 98765-4321',
-  email: 'maria.silva@email.com',
-  bairro: 'Junco',
-  cidade: 'Araripina',
-  estado: 'PI',
-  sexo: 'Feminino'
+  nomeCompleto: '',
+  dataNascimento: '',
+  cpf: '',
+  telefone: '',
+  email: '',
+  bairro: '',
+  cidade: '',
+  estado: '',
+  sexo: ''
 }
 
 /**
  * Estado inicial dos dados médicos
  */
 const initialMedicalInfo: MedicalInfo = {
-  tipoSanguineo: 'O+',
-  alergias: 'Penicilina, Amendoim',
-  condicoesPreExistentes: 'Hipertensão, Diabetes Tipo 2'
+  tipoSanguineo: '',
+  alergias: '',
+  condicoesPreExistentes: ''
 }
 
 /**
  * Medicamentos iniciais em uso
  */
-const initialMedications: Medication[] = [
-  { id: '1', nome: 'Losartana', dosagem: '50mg' },
-  { id: '2', nome: 'Metformina', dosagem: '850mg' }
-]
+const initialMedications: Medication[] = []
 
 /**
  * Histórico inicial do paciente
  */
-const initialHistory: PatientHistoryEntry[] = [
-  {
-    id: '1',
-    data: '2023-10-20',
-    descricao: 'Consulta de rotina anual. Exames de sangue solicitados. Paciente relata bem-estar geral, mas com pequenos picos de pressão arterial em momentos de estresse.'
-  },
-  {
-    id: '2',
-    data: '2023-05-10',
-    descricao: 'Retorno para ajuste de medicação para hipertensão. Aumentada a dose de Losartana. Monitoramento semanal da pressão arterial recomendado.'
-  },
-  {
-    id: '3',
-    data: '2022-12-01',
-    descricao: 'Primeira consulta e diagnóstico de diabetes tipo 2. Iniciado tratamento com Metformina. Orientações sobre dieta e exercícios físicos fornecidas.'
-  },
-  {
-    id: '4',
-    data: '2022-08-15',
-    descricao: 'Consulta inicial. Paciente apresenta histórico familiar de doenças cardíacas e diabetes. Realizados exames básicos.'
-  }
-]
+const initialHistory: PatientHistoryEntry[] = []
 
 /**
  * Componente principal do formulário de detalhes do paciente
@@ -148,6 +124,7 @@ export function PatientDetailsForm(): React.ReactElement {
   const [history, setHistory] = useState<PatientHistoryEntry[]>(initialHistory)
   const [newMedication, setNewMedication] = useState({ nome: '', dosagem: '' })
   const [newHistoryEntry, setNewHistoryEntry] = useState({ data: '', descricao: '' })
+  const [showHistoryForm, setShowHistoryForm] = useState(false)
 
   /**
    * Adiciona um novo medicamento à lista
@@ -219,8 +196,8 @@ export function PatientDetailsForm(): React.ReactElement {
     <div className="space-y-6">
       {/* Formulário principal em duas colunas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Coluna esquerda - Informações Pessoais */}
-        <Card className="p-6">
+  {/* Coluna esquerda - Informações Pessoais */}
+  <Card className="p-6 bg-white border border-gray-100 shadow-sm">
           <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
             <UserPlus className="w-5 h-5 mr-2 text-[#2074E9]" />
             Informações Pessoais
@@ -357,8 +334,8 @@ export function PatientDetailsForm(): React.ReactElement {
           </div>
         </Card>
 
-        {/* Coluna direita - Dados Médicos */}
-        <Card className="p-6">
+  {/* Coluna direita - Dados Médicos */}
+  <Card className="p-6 bg-white border border-gray-100 shadow-sm">
           <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
             <Heart className="w-5 h-5 mr-2 text-[#2074E9]" />
             Dados Médicos
@@ -466,7 +443,7 @@ export function PatientDetailsForm(): React.ReactElement {
                   Histórico do Paciente
                 </Label>
                 <Button
-                  onClick={addHistoryEntry}
+                  onClick={() => setShowHistoryForm(true)}
                   size="sm"
                   variant="outline"
                   className="text-[#2074E9] border-[#2074E9] hover:bg-[#2074E9] hover:text-white"
@@ -513,7 +490,7 @@ export function PatientDetailsForm(): React.ReactElement {
               </div>
 
               {/* Formulário para nova entrada */}
-              {(newHistoryEntry.data || newHistoryEntry.descricao) && (
+              {(showHistoryForm || newHistoryEntry.data || newHistoryEntry.descricao) && (
                 <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="space-y-3">
                     <Input
@@ -538,7 +515,7 @@ export function PatientDetailsForm(): React.ReactElement {
                         Adicionar
                       </Button>
                       <Button
-                        onClick={() => setNewHistoryEntry({ data: '', descricao: '' })}
+                        onClick={() => { setNewHistoryEntry({ data: '', descricao: '' }); setShowHistoryForm(false) }}
                         size="sm"
                         variant="outline"
                       >

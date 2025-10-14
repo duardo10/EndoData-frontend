@@ -83,7 +83,7 @@ export function WelcomeSection({ userName, userAvatar }: WelcomeSectionProps): R
 
           {/* Botão Novo Paciente */}
           <div className="hidden md:block">
-            <Link href="/dashboard/pacientes">
+            <Link href="/dashboard/pacientes/novo">
               <Button 
                 className="bg-[#2074E9] hover:bg-[#104CA0] text-white px-6 py-2 h-auto font-medium shadow-sm"
               >
@@ -96,7 +96,7 @@ export function WelcomeSection({ userName, userAvatar }: WelcomeSectionProps): R
 
         {/* Botão móvel */}
         <div className="md:hidden mt-4 flex justify-end">
-          <Link href="/dashboard/pacientes">
+          <Link href="/dashboard/pacientes/novo">
             <Button 
               className="bg-[#2074E9] hover:bg-[#104CA0] text-white px-4 py-2 h-auto font-medium shadow-sm"
             >
