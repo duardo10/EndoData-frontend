@@ -22,8 +22,8 @@ const quickActions: QuickActionItem[] = [
   {
     icon: Users,
     label: 'Paciente',
-    href: '/dashboard/pacientes',
-    description: 'Gerenciar pacientes'
+    href: '/dashboard/pacientes/novo',
+    description: 'Novo paciente'
   },
   {
     icon: FileText,

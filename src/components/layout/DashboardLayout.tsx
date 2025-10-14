@@ -36,7 +36,7 @@ const menuItems = [
   {
     icon: Users,
     label: 'Pacientes',
-    href: '/dashboard/pacientes',
+    href: '/dashboard/pacientes/novo',
   },
   {
     icon: FileText,
