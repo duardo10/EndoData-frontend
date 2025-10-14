@@ -19,8 +19,10 @@ export default function CalculosClinicos(): React.ReactElement {
   const [sexo, setSexo] = useState<'masculino' | 'feminino'>('masculino')
   const [praticaAtividade, setPraticaAtividade] = useState<'sim' | 'nao'>('nao')
   const [metabolismoBasal, setMetabolismoBasal] = useState<number | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
 
-  const calcularMetabolismo = (): void => {
+  const calcularMetabolismo = async (): Promise<void> => {
     const pesoNum = parseFloat(peso)
     const alturaNum = parseFloat(altura)
     const idadeNum = parseInt(idade)
@@ -30,26 +32,42 @@ export default function CalculosClinicos(): React.ReactElement {
       return
     }
 
-    // Cálculo do Metabolismo Basal usando a fórmula de Harris-Benedict revisada
-    let tmb: number
-    if (sexo === 'masculino') {
-      tmb = 88.362 + (13.397 * pesoNum) + (4.799 * alturaNum) - (5.677 * idadeNum)
-    } else {
-      tmb = 447.593 + (9.247 * pesoNum) + (3.098 * alturaNum) - (4.330 * idadeNum)
-    }
+    setLoading(true)
+    setErro(null)
 
-    // Ajuste se pratica atividade física regular
-    if (praticaAtividade === 'sim') {
-      tmb = tmb * 1.55 // Fator de atividade moderada
-    } else {
-      tmb = tmb * 1.2 // Fator sedentário
-    }
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('jwt') : '';
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/calculations/bmr`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          weight: pesoNum,
+          height: alturaNum,
+          age: idadeNum,
+          sex: sexo,
+          activityLevel: praticaAtividade === 'sim' ? 'moderado' : 'sedentario',
+        })
+      })
 
-    setMetabolismoBasal(Math.round(tmb * 100) / 100)
+      if (!response.ok) {
+        throw new Error('Erro ao calcular metabolismo basal. Tente novamente.')
+      }
+      const data = await response.json()
+      setMetabolismoBasal(data.bmr ?? null)
+    } catch (e: any) {
+      setErro(e.message || 'Erro na requisição.')
+      setMetabolismoBasal(null)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const fecharResultado = (): void => {
     setMetabolismoBasal(null)
+    setErro(null)
   }
 
   return (
@@ -187,7 +205,11 @@ export default function CalculosClinicos(): React.ReactElement {
                     METABOLISMO BASAL =
                   </span>
                   <span className="text-lg font-bold text-gray-900">
-                    {metabolismoBasal !== null ? `${metabolismoBasal.toFixed(2)} Kcal` : '0.00 Kcal'}
+                    {loading
+                      ? 'Calculando...'
+                      : erro
+                        ? <span className="text-red-500 text-sm">{erro}</span>
+                        : metabolismoBasal !== null ? `${metabolismoBasal.toFixed(2)} Kcal` : '0.00 Kcal'}
                   </span>
                 </div>
               </div>

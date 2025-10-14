@@ -24,67 +24,72 @@ export default function CalculadoraIMC(): React.ReactElement {
     cor: string
     tmbEstimada: number
   } | null>(null)
+  const [erro, setErro] = useState<string | null>(null)
+  const [loading, setLoading] = useState<boolean>(false)
 
-  const calcularIMC = (): void => {
+  const calcularIMC = async (): Promise<void> => {
     const pesoNum = parseFloat(peso)
-    const alturaNum = parseFloat(altura) / 100 // converter cm para metros
+    const alturaNum = parseFloat(altura)
     const idadeNum = parseInt(idade)
-
     if (isNaN(pesoNum) || isNaN(alturaNum) || isNaN(idadeNum) || alturaNum <= 0) {
       alert('Por favor, preencha todos os campos corretamente')
       return
     }
-
-    const imc = pesoNum / (alturaNum * alturaNum)
-    
-    // Cálculo da TMB (Taxa Metabólica Basal) usando a fórmula de Harris-Benedict
-    let tmb: number
-    if (sexo === 'masculino') {
-      tmb = 88.362 + (13.397 * pesoNum) + (4.799 * (alturaNum * 100)) - (5.677 * idadeNum)
-    } else {
-      tmb = 447.593 + (9.247 * pesoNum) + (3.098 * (alturaNum * 100)) - (4.330 * idadeNum)
+    setErro(null)
+    setLoading(true)
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('jwt') : '';
+      // IMC
+      const resIMC = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/calculations/imc`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          weight: pesoNum,
+          height: alturaNum
+        })
+      })
+      if (!resIMC.ok) throw new Error('Erro ao calcular IMC.')
+      const imcData = await resIMC.json()
+      // BMR
+      const resBMR = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/calculations/bmr`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          weight: pesoNum,
+          height: alturaNum,
+          age: idadeNum,
+          sex: sexo,
+          activityLevel: nivelAtividade
+        })
+      })
+      if (!resBMR.ok) throw new Error('Erro ao calcular BMR.')
+      const bmrData = await resBMR.json()
+      // Cor
+      let cor = ''
+      if (imcData.classification === 'Abaixo do Peso') cor = 'bg-[#60A5FA]'
+      else if (imcData.classification === 'Normal') cor = 'bg-[#1DD75B4D]'
+      else if (imcData.classification === 'Sobrepeso') cor = 'bg-[#FCD34D]'
+      else if (imcData.classification === 'Obesidade Grau I') cor = 'bg-[#FB923C]'
+      else if (imcData.classification === 'Obesidade Grau II') cor = 'bg-[#F87171]'
+      else cor = 'bg-[#DC2626]'
+      setResultado({
+        imc: imcData.imc?.toFixed(1) || '-',
+        classificacao: imcData.classification || '-',
+        cor,
+        tmbEstimada: bmrData.bmr ?? '-'
+      })
+    } catch (error: any) {
+      setErro(error.message || 'Erro na requisição.')
+      setResultado(null)
+    } finally {
+      setLoading(false)
     }
-
-    // Multiplicadores de atividade física
-    const multiplicadores: Record<string, number> = {
-      'sedentario': 1.2,
-      'leve': 1.375,
-      'moderado': 1.55,
-      'intenso': 1.725,
-      'muito-intenso': 1.9
-    }
-
-    const tmbEstimada = Math.round(tmb * multiplicadores[nivelAtividade])
-
-    let classificacao = ''
-    let cor = ''
-    
-    if (imc < 18.5) {
-      classificacao = 'Abaixo do Peso'
-      cor = 'bg-[#60A5FA]' // blue-400
-    } else if (imc >= 18.5 && imc < 25) {
-      classificacao = 'Normal'
-      cor = 'bg-[#1DD75B4D]' // success-500 com opacidade
-    } else if (imc >= 25 && imc < 30) {
-      classificacao = 'Sobrepeso'
-      cor = 'bg-[#FCD34D]' // yellow-300
-    } else if (imc >= 30 && imc < 35) {
-      classificacao = 'Obesidade Grau I'
-      cor = 'bg-[#FB923C]' // orange-400
-    } else if (imc >= 35 && imc < 40) {
-      classificacao = 'Obesidade Grau II'
-      cor = 'bg-[#F87171]' // red-400
-    } else {
-      classificacao = 'Obesidade Grau III'
-      cor = 'bg-[#DC2626]' // red-600
-    }
-
-    setResultado({
-      imc: imc.toFixed(1),
-      classificacao,
-      cor,
-      tmbEstimada
-    })
   }
 
   return (
@@ -215,6 +220,9 @@ export default function CalculadoraIMC(): React.ReactElement {
           </Card>
 
           {/* Resultados */}
+          {erro && (
+            <div className="p-4 bg-red-100 rounded-md text-red-600 mb-4">{erro}</div>
+          )}
           {resultado && (
             <Card className="p-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-6">Resultados</h2>

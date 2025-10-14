@@ -47,6 +47,9 @@ export default function LoginForm() {
   /** Estado para controlar o loading durante autenticação */
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
+  /** Estado para armazenar mensagens de erro */
+  const [erro, setErro] = useState<string | null>(null)
+
   /**
    * Manipulador de submissão do formulário de login
    * 
@@ -66,16 +69,22 @@ export default function LoginForm() {
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
     setIsLoading(true)
-    
-    // Log para desenvolvimento - remover em produção
-    console.log('Login attempt:', { email, password })
-    
-    // Simular delay de autenticação - substituir por chamada real da API
-    setTimeout(() => {
+    setErro(null)
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+      if (!response.ok) throw new Error('Usuário ou senha inválidos!')
+      const data = await response.json()
+      localStorage.setItem('jwt', data.access_token)
       setIsLoading(false)
-      // Redirecionar para o dashboard após login bem-sucedido
       router.push('/dashboard')
-    }, 1000)
+    } catch (err: any) {
+      setIsLoading(false)
+      setErro(err.message || 'Erro ao autenticar!')
+    }
   }
 
   return (
@@ -104,6 +113,9 @@ export default function LoginForm() {
 
         {/* Formulário */}
         <form onSubmit={handleSubmit} className="absolute inset-0">
+          {erro && (
+            <div className="p-2 mb-3 bg-red-100 text-red-700 rounded">{erro}</div>
+          )}
           {/* Campo Email */}
           <div className="absolute top-[244px] left-[32px] right-[32px]">
             <Label htmlFor="email" className="font-roboto text-[14px] leading-[22px] font-medium block mb-1 text-gray-700">
