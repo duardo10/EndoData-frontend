@@ -13,7 +13,8 @@ import {
   Bell,
   Menu,
   X,
-  Receipt
+  Receipt,
+  Search
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
@@ -33,6 +34,11 @@ const menuItems = [
     icon: Home,
     label: 'Início',
     href: '/dashboard',
+  },
+  {
+    icon: Search,
+    label: 'Buscar',
+    href: '/dashboard/pacientes/busca',
   },
   {
     icon: Users,
