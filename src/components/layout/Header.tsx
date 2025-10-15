@@ -7,6 +7,27 @@ import { useTheme } from 'next-themes';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
+/**
+ * Componente Header responsivo da aplicação EndoData
+ * 
+ * @description Header adaptativo que muda sua apresentação baseado na rota atual.
+ * Na página de login exibe apenas o logo centralizado, enquanto em outras páginas
+ * apresenta navegação lateral completa com menu responsivo e controle de tema.
+ * 
+ * @returns {React.ReactElement} Componente header
+ * 
+ * @features
+ * - Layout adaptativo baseado na rota
+ * - Navegação lateral responsiva
+ * - Controle de tema (claro/escuro)
+ * - Menu hambúrguer para mobile
+ * - Logo centralizado na página de login
+ * - Links de navegação com ícones
+ * - Tooltips para melhor UX
+ * 
+ * @author EndoData Team
+ * @since 1.0.0
+ */
 export function Header(): React.ReactElement {
   const { theme, setTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
