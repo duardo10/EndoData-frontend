@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Calendar, IdCard } from "lucide-react";
+import styles from './PatientSearch.module.css'
 
 type Patient = {
   id: string;
@@ -171,20 +172,18 @@ export function PatientSearch(): React.ReactElement {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-center mb-6 sm:text-3xl text-black">
+    <div className={styles.container}>
+      <h1 className={styles.title}>
         Busca e Listagem de Pacientes
       </h1>
 
-      <div className="mb-6 max-w-2xl mx-auto">
+      <div className={styles.inputWrapper}>
         <div className="relative">
           {" "}
           {/* Adiciona um wrapper para o ícone */}
           <input
             aria-label="Buscar pacientes"
-            className="w-full border rounded-xl pl-12 pr-4 py-3 shadow-sm 
-             bg-white text-black placeholder-gray-400 
-             focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={styles.input}
             placeholder="Buscar por nome ou CPF..."
             value={query}
             onChange={(e) => {
@@ -197,7 +196,7 @@ export function PatientSearch(): React.ReactElement {
           />
           {/* Ícone de busca dentro do input */}
           <svg
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+            className={styles.icon}
             xmlns="http://www.w3.org/2000/svg"
             width="20"
             height="20"
@@ -213,13 +212,13 @@ export function PatientSearch(): React.ReactElement {
           </svg>
           {/* Sugestões dropdown */}
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute left-0 right-0 z-20 mt-2">
-              <ul className="bg-white border rounded-md shadow overflow-hidden">
+            <div className={styles.suggestions}>
+              <ul className={styles.suggestionsList}>
                 {suggestions.map((s) => (
-                  <li key={s.id} className="hover:bg-sky-50">
+                  <li key={s.id} className={styles.suggestionItem}>
                     <Link
                       href={`/dashboard/pacientes/${s.id}`}
-                      className="px-4 py-3 flex items-center gap-3"
+                      className={styles.suggestionLink}
                       onClick={() => {
                         setQuery(s.name);
                         setShowSuggestions(false);
@@ -228,7 +227,7 @@ export function PatientSearch(): React.ReactElement {
                       <img
                         src={s.photo}
                         alt={s.name}
-                        className="w-8 h-8 rounded-full object-cover"
+                        className={styles.suggestionImg}
                       />
                       <div>
                         <div className="text-sm font-medium text-sky-700">{s.name}</div>
@@ -242,8 +241,7 @@ export function PatientSearch(): React.ReactElement {
           )}
         </div>
       </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className={styles.grid}>
         {currentPatients.map((p) => (
           <Link
             key={p.id}
@@ -251,22 +249,18 @@ export function PatientSearch(): React.ReactElement {
             className="block"
           >
             {/* COR DE FUNDO DO CARD ALTERADA AQUI */}
-            <div className="flex items-center gap-4 p-5 bg-[#DEE1E6] rounded-xl shadow hover:shadow-md transition h-full">
+            <div className={styles.card}>
               <img
                 src={p.photo}
                 alt={p.name}
-                className="w-14 h-14 rounded-full object-cover flex-shrink-0"
+                className={styles.cardImg}
               />
               <div>
-                {/* Ajuste da cor do nome do paciente */}
-                <div className="text-lg font-semibold text-blue-700 hover:underline">
-                  {p.name}
-                </div>
-                {/* Ajuste da cor dos ícones e textos secundários */}
-                <div className="text-sm text-gray-600 flex items-center gap-1.5 mt-1">
+                <div className={styles.cardName}>{p.name}</div>
+                <div className={styles.cardMeta}>
                   <IdCard size={14} /> <span>CPF: {p.cpf}</span>
                 </div>
-                <div className="text-sm text-gray-600 flex items-center gap-1.5">
+                <div className={styles.cardMeta}>
                   <Calendar size={14} /> <span>Nascimento: {p.birth}</span>
                 </div>
               </div>
@@ -277,31 +271,33 @@ export function PatientSearch(): React.ReactElement {
 
       {filtered.length === 0 && (
         <div className="text-center py-10 text-gray-500">
-          <p>Nenhum paciente encontrado.</p>
+          <h2 className="text-3xl font-bold mb-2">404</h2>
+          <p className="mb-2">This page could not be found.</p>
+          <p>O próximo passo está em desenvolvimento.</p>
         </div>
       )}
 
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 sm:gap-3 mt-8">
+        <div className={styles.pagination}>
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            // Ajuste da cor dos botões de navegação
-            className="px-3 py-1 text-gray-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={styles.pageBtn}
           >
             &lt; Anterior
           </button>
 
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className={styles.pageNumbersWrapper}>
             {Array.from({ length: totalPages }, (_, i) => (
               <button
                 key={i + 1}
                 onClick={() => handlePageChange(i + 1)}
-                className={`w-8 h-8 rounded-md font-semibold transition-colors ${
-                  // Ajuste da cor do botão ativo e inativo
+                className={`${styles.pageNumber} ${
                   currentPage === i + 1
-                    ? "bg-blue-600 text-white" // Cor do botão ativo
-                    : "hover:bg-blue-100 text-gray-600" // Cor do botão inativo e hover
+                    ? styles.pageNumberActive
+                    : i + 1 === currentPage + 1
+                    ? styles.pageNumberNext
+                    : styles.pageNumberInactive
                 }`}
               >
                 {i + 1}
@@ -312,8 +308,7 @@ export function PatientSearch(): React.ReactElement {
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            // Ajuste da cor dos botões de navegação
-            className="px-3 py-1 text-gray-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={styles.pageBtn}
           >
             Próximo &gt;
           </button>
