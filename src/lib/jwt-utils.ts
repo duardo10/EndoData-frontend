@@ -66,7 +66,7 @@ export function decodeJWT(token: string): JWTPayload | null {
  */
 export function getCurrentUserId(): string | null {
   try {
-    const token = localStorage.getItem('auth_token')
+    const token = localStorage.getItem('auth_token') // Volta para 'auth_token'
     if (!token) {
       return null
     }
@@ -85,7 +85,7 @@ export function getCurrentUserId(): string | null {
  */
 export function getCurrentUser(): JWTPayload | null {
   try {
-    const token = localStorage.getItem('auth_token')
+    const token = localStorage.getItem('auth_token') // Volta para 'auth_token'
     if (!token) {
       return null
     }

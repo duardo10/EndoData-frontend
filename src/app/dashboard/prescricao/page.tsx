@@ -16,7 +16,7 @@
 // =====================================
 
 // React hooks
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 // Componentes UI
 import { Button } from '@/components/ui/button'
@@ -61,6 +61,9 @@ export default function PrescricaoPage() {
   // ESTADOS DO COMPONENTE
   // =====================================
   
+  // Estado de inicialização
+  const [isInitialized, setIsInitialized] = useState(false)
+  
   // Estados relacionados à busca e seleção de pacientes
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [patientSearch, setPatientSearch] = useState('')
@@ -78,10 +81,67 @@ export default function PrescricaoPage() {
   // Estados de controle da interface
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState<Message | null>(null)
+  const [authChecked, setAuthChecked] = useState(false)
 
   // =====================================
   // FUNÇÕES AUXILIARES
   // =====================================
+
+  /**
+   * Verifica se o usuário tem autenticação válida
+   */
+  /**
+   * Verifica se o usuário tem autenticação válida
+   */
+  const checkAuthentication = () => {
+    const token = localStorage.getItem('auth_token') // Volta para 'auth_token'
+    if (!token) {
+      setMessage({type: 'error', text: 'Sessão expirada. Redirecionando para login...'})
+      setTimeout(() => window.location.href = '/', 3000)
+      return false
+    }
+
+    const userId = getCurrentUserId()
+    if (!userId) {
+      setMessage({type: 'error', text: 'Token inválido. Redirecionando para login...'})
+      setTimeout(() => {
+        localStorage.removeItem('jwt')
+        window.location.href = '/'
+      }, 3000)
+      return false
+    }
+
+    return true
+  }  /**
+   * Inicialização do componente
+   */
+  useEffect(() => {
+    try {
+      if (!checkAuthentication()) {
+        return
+      }
+      setAuthChecked(true)
+      setIsInitialized(true)
+    } catch (error) {
+      console.error('Erro na inicialização:', error)
+      setMessage({type: 'error', text: 'Erro ao carregar a página. Recarregue o navegador.'})
+    }
+  }, [])
+
+  // Debounce para busca de pacientes
+  useEffect(() => {
+    if (patientSearch.length < 2) {
+      setPatientSearchResults([])
+      setShowPatientDropdown(false)
+      return
+    }
+
+    const timeoutId = setTimeout(() => {
+      handlePatientSearch(patientSearch)
+    }, 300) // 300ms de debounce
+
+    return () => clearTimeout(timeoutId)
+  }, [patientSearch]) // Removido handlePatientSearch da dependência
 
   /**
    * Reseta todos os campos do formulário para seus valores iniciais.
@@ -93,16 +153,20 @@ export default function PrescricaoPage() {
    * @returns {void}
    */
   const resetForm = () => {
-    setSelectedPatient(null)
-    setPatientSearch('')
-    setPatientSearchResults([])
-    setShowPatientDropdown(false)
-    setMedicationName('')
-    setDosage('')
-    setFrequency('')
-    setInstructions('')
-    setObservations('')
-    setMessage(null)
+    try {
+      setSelectedPatient(null)
+      setPatientSearch('')
+      setPatientSearchResults([])
+      setShowPatientDropdown(false)
+      setMedicationName('')
+      setDosage('')
+      setFrequency('')
+      setInstructions('')
+      setObservations('')
+      setMessage(null)
+    } catch (error) {
+      console.error('Erro ao resetar formulário:', error)
+    }
   }
 
   /**
@@ -116,22 +180,36 @@ export default function PrescricaoPage() {
    * @returns {Promise<void>}
    */
   const handlePatientSearch = async (searchText: string) => {
-    if (searchText.length < 2) {
-      setPatientSearchResults([])
-      setShowPatientDropdown(false)
-      return
-    }
-
     try {
+      if (searchText.length < 2) {
+        setPatientSearchResults([])
+        setShowPatientDropdown(false)
+        return
+      }
+
       setIsSearchingPatients(true)
       
       const response = await PatientService.searchPatients(searchText)
-      const patients = response.patients || []
+      const patients = response?.patients || []
+      
       setPatientSearchResults(patients)
       setShowPatientDropdown(patients.length > 0)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao buscar pacientes:', error)
-      setMessage({type: 'error', text: 'Erro ao buscar pacientes. Verifique sua conexão.'})
+      
+      let errorMessage = 'Erro ao buscar pacientes. Verifique sua conexão.'
+      
+      if (error.response?.status === 401) {
+        errorMessage = 'Sessão expirada. Redirecionando para login...'
+        setTimeout(() => {
+          localStorage.removeItem('jwt') // Mudança para usar 'jwt'
+          window.location.href = '/' // Página de login na raiz
+        }, 2000)
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Serviço de busca de pacientes não encontrado.'
+      }
+      
+      setMessage({type: 'error', text: errorMessage})
       setPatientSearchResults([])
       setShowPatientDropdown(false)
     } finally {
@@ -149,10 +227,15 @@ export default function PrescricaoPage() {
    * @returns {void}
    */
   const handleSelectPatient = (patient: Patient) => {
-    setSelectedPatient(patient)
-    setPatientSearch(patient.name)
-    setShowPatientDropdown(false)
-    setPatientSearchResults([])
+    try {
+      setSelectedPatient(patient)
+      setPatientSearch(patient.name || '')
+      setShowPatientDropdown(false)
+      setPatientSearchResults([])
+    } catch (error) {
+      console.error('Erro ao selecionar paciente:', error)
+      setMessage({type: 'error', text: 'Erro ao selecionar paciente. Tente novamente.'})
+    }
   }
 
   /**
@@ -201,8 +284,7 @@ export default function PrescricaoPage() {
       setMessage(null)
 
       // Verificar se há token e userId
-      const token = localStorage.getItem('auth_token')
-      
+      const token = localStorage.getItem('auth_token') // Volta para 'auth_token'
       const userId = getCurrentUserId()
       
       if (!token) {
@@ -264,6 +346,19 @@ export default function PrescricaoPage() {
   // RENDERIZAÇÃO DO COMPONENTE
   // =====================================
   
+  // Loading inicial
+  if (!isInitialized || !authChecked) {
+    return (
+      <DashboardLayout>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-gray-600">
+            {!authChecked ? 'Verificando autenticação...' : 'Carregando...'}
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+  
   return (
     <DashboardLayout>
       <div className="flex-1 space-y-6 p-6">
@@ -295,8 +390,13 @@ export default function PrescricaoPage() {
                 id="patient"
                 value={patientSearch}
                 onChange={(e) => {
-                  setPatientSearch(e.target.value)
-                  handlePatientSearch(e.target.value)
+                  try {
+                    const value = e.target.value || ''
+                    setPatientSearch(value)
+                    // Remover chamada direta da função
+                  } catch (error) {
+                    console.error('Erro ao processar busca de paciente:', error)
+                  }
                 }}
                 placeholder="Busque o paciente por CPF ou nome..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -317,11 +417,17 @@ export default function PrescricaoPage() {
                     {patientSearchResults.map((patient) => (
                       <li 
                         key={patient.id}
-                        onClick={() => handleSelectPatient(patient)}
+                        onClick={() => {
+                          try {
+                            handleSelectPatient(patient)
+                          } catch (error) {
+                            console.error('Erro ao clicar no paciente:', error)
+                          }
+                        }}
                         className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                       >
-                        <div className="font-medium">{patient.name}</div>
-                        <div className="text-sm text-gray-500">CPF: {patient.cpf}</div>
+                        <div className="font-medium">{patient.name || 'Nome não disponível'}</div>
+                        <div className="text-sm text-gray-500">CPF: {patient.cpf || 'N/A'}</div>
                       </li>
                     ))}
                   </ul>
@@ -342,9 +448,13 @@ export default function PrescricaoPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setSelectedPatient(null)
-                        setPatientSearch('')
-                        setShowPatientDropdown(false)
+                        try {
+                          setSelectedPatient(null)
+                          setPatientSearch('')
+                          setShowPatientDropdown(false)
+                        } catch (error) {
+                          console.error('Erro ao remover paciente:', error)
+                        }
                       }}
                     >
                       Remover
@@ -363,7 +473,13 @@ export default function PrescricaoPage() {
                 type="text"
                 id="medication"
                 value={medicationName}
-                onChange={(e) => setMedicationName(e.target.value)}
+                onChange={(e) => {
+                  try {
+                    setMedicationName(e.target.value || '')
+                  } catch (error) {
+                    console.error('Erro ao atualizar medicamento:', error)
+                  }
+                }}
                 placeholder="Nome do medicamento"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
@@ -379,7 +495,13 @@ export default function PrescricaoPage() {
                 type="text"
                 id="dosage"
                 value={dosage}
-                onChange={(e) => setDosage(e.target.value)}
+                onChange={(e) => {
+                  try {
+                    setDosage(e.target.value || '')
+                  } catch (error) {
+                    console.error('Erro ao atualizar dosagem:', error)
+                  }
+                }}
                 placeholder="Ex: 500mg, 1 comprimido"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
@@ -394,7 +516,13 @@ export default function PrescricaoPage() {
               <select
                 id="frequency"
                 value={frequency}
-                onChange={(e) => setFrequency(e.target.value)}
+                onChange={(e) => {
+                  try {
+                    setFrequency(e.target.value || '')
+                  } catch (error) {
+                    console.error('Erro ao atualizar frequência:', error)
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
@@ -422,7 +550,13 @@ export default function PrescricaoPage() {
               <textarea
                 id="instructions"
                 value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
+                onChange={(e) => {
+                  try {
+                    setInstructions(e.target.value || '')
+                  } catch (error) {
+                    console.error('Erro ao atualizar instruções:', error)
+                  }
+                }}
                 placeholder="Como usar o medicamento (duração, horários, etc.)"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={3}
@@ -437,7 +571,13 @@ export default function PrescricaoPage() {
               <textarea
                 id="observations"
                 value={observations}
-                onChange={(e) => setObservations(e.target.value)}
+                onChange={(e) => {
+                  try {
+                    setObservations(e.target.value || '')
+                  } catch (error) {
+                    console.error('Erro ao atualizar observações:', error)
+                  }
+                }}
                 placeholder="Observações gerais sobre a prescrição"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={3}

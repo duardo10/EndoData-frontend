@@ -65,7 +65,7 @@ api.interceptors.request.use(
   (config) => {
     // Verifica se está executando no navegador (client-side)
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('auth_token'); // Volta para 'auth_token'
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -95,9 +95,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
         // Remove token inválido
-        localStorage.removeItem('auth_token');
-        // Redireciona para login
-        window.location.href = '/login';
+        localStorage.removeItem('jwt'); // Mudança para usar 'jwt'
+        // Redireciona para login na raiz
+        window.location.href = '/';
       }
     }
     return Promise.reject(error);

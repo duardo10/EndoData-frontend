@@ -78,7 +78,7 @@ export default function LoginForm() {
       })
       if (!response.ok) throw new Error('Usuário ou senha inválidos!')
       const data = await response.json()
-      localStorage.setItem('jwt', data.access_token)
+      localStorage.setItem('auth_token', data.access_token) // Usar 'auth_token' consistentemente
       setIsLoading(false)
       router.push('/dashboard')
     } catch (err: any) {

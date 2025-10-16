@@ -36,7 +36,13 @@ export default function CalculosClinicos(): React.ReactElement {
     setErro(null)
 
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('jwt') : '';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : '';
+      
+      if (!token) {
+        setErro('Token de autenticação não encontrado')
+        return
+      }
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/calculations/bmr`, {
         method: 'POST',
         headers: {

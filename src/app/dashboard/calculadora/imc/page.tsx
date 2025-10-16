@@ -38,7 +38,13 @@ export default function CalculadoraIMC(): React.ReactElement {
     setErro(null)
     setLoading(true)
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('jwt') : '';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : '';
+      
+      if (!token) {
+        setErro('Token de autenticação não encontrado')
+        return
+      }
+      
       // IMC
       const resIMC = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/calculations/imc`, {
         method: 'POST',
