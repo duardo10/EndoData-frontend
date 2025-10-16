@@ -26,14 +26,15 @@ interface ConditionalLayoutProps {
 export function ConditionalLayout({ children }: ConditionalLayoutProps): React.ReactElement {
   const pathname = usePathname()
   
-  // Detecta se estamos na página de login
+  // Detecta se estamos na página de login ou cadastro
   const isLoginPage = pathname === '/'
+  const isCadastroPage = pathname === '/cadastro'
   
   // Detecta se estamos em rotas do dashboard (que já têm seu próprio layout)
   const isDashboardRoute = pathname?.startsWith('/dashboard')
   
-  if (isLoginPage) {
-    // Layout para página de login: Header simplificado + Footer
+  if (isLoginPage || isCadastroPage) {
+    // Layout para página de login e cadastro: Header simplificado + Footer
     return (
       <div className="flex min-h-screen flex-col">
         <Header />

@@ -35,8 +35,9 @@ export function Header(): React.ReactElement {
 
   const toggleMenu = () => setIsOpen(!isOpen);
   
-  // Detecta se estamos na página de login
+  // Detecta se estamos na página de login ou cadastro
   const isLoginPage = pathname === '/';
+  const isCadastroPage = pathname === '/cadastro';
 
   // NavLinks responsivo que se adapta ao tamanho da tela
   const NavLinks = () => {
@@ -68,8 +69,8 @@ export function Header(): React.ReactElement {
     );
   };
 
-  // Header simplificado para página de login
-  if (isLoginPage) {
+  // Header simplificado para página de login e cadastro
+  if (isLoginPage || isCadastroPage) {
     return (
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-colors duration-300">
         <div className="container flex h-16 items-center justify-center">
