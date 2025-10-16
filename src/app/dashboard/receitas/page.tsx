@@ -130,17 +130,17 @@ export default function ReceitasPage() {
    * com cores e texto apropriados. Fornece fallback para status
    * não reconhecidos.
    * 
-   * @param {string} status - Status da receita (active, completed, expired)
+   * @param {string} status - Status da receita (pending, paid, cancelled)
    * @returns {JSX.Element} Badge estilizado com o status da receita
    */
   const getStatusBadge = (status: string) => {
     const statusMap: StatusMapping = {
-      'active': { label: 'Ativa', className: 'bg-blue-100 text-blue-800' },
-      'completed': { label: 'Renovada', className: 'bg-green-100 text-green-800' },
-      'expired': { label: 'Expirada', className: 'bg-gray-100 text-gray-800' }
+      'pending': { label: 'Pendente', className: 'bg-yellow-100 text-yellow-800' },
+      'paid': { label: 'Pago', className: 'bg-green-100 text-green-800' },
+      'cancelled': { label: 'Cancelado', className: 'bg-red-100 text-red-800' }
     }
     
-    const statusInfo = statusMap[status] || { label: 'Ativa', className: 'bg-blue-100 text-blue-800' }
+    const statusInfo = statusMap[status] || { label: 'Pendente', className: 'bg-yellow-100 text-yellow-800' }
     
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.className}`}>
@@ -228,9 +228,9 @@ export default function ReceitasPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="Todos">Todos</option>
-                <option value="Ativa">Ativa</option>
-                <option value="Renovada">Renovada</option>
-                <option value="Expirada">Expirada</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Pago">Pago</option>
+                <option value="Cancelado">Cancelado</option>
               </select>
             </div>
 
@@ -256,9 +256,9 @@ export default function ReceitasPage() {
               onClick={() => {
                 // Mapeamento de status da interface para valores do backend
                 let statusValue: string | undefined = undefined
-                if (filters.status === 'Ativa') statusValue = 'pending'
-                else if (filters.status === 'Renovada') statusValue = 'paid'
-                else if (filters.status === 'Expirada') statusValue = 'cancelled'
+                if (filters.status === 'Pendente') statusValue = 'pending'
+                else if (filters.status === 'Pago') statusValue = 'paid'
+                else if (filters.status === 'Cancelado') statusValue = 'cancelled'
                 
                 // Aplica filtros através do hook customizado
                 updateFilters({
@@ -287,7 +287,7 @@ export default function ReceitasPage() {
         <Card className="p-6">
           <h2 className="text-lg font-semibold mb-4">Lista de Prescrições</h2>
           
-          {loading && (
+          {loading.fetching && (
             <div className="text-center py-8">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               <p className="mt-2 text-gray-600">Carregando receitas...</p>
@@ -366,7 +366,7 @@ export default function ReceitasPage() {
               </tbody>
             </table>
 
-            {receipts.length === 0 && !loading && (
+            {receipts.length === 0 && !loading.fetching && (
               <div className="text-center py-8 text-gray-500">
                 <p>Nenhuma receita encontrada</p>
               </div>
