@@ -254,18 +254,30 @@ export default function ReceitasPage() {
             <Button 
               className="bg-blue-600 hover:bg-blue-700 text-white"
               onClick={() => {
+                console.log('🔍 Aplicando filtros:', filters)
+                
                 // Mapeamento de status da interface para valores do backend
                 let statusValue: string | undefined = undefined
                 if (filters.status === 'Pendente') statusValue = 'pending'
                 else if (filters.status === 'Pago') statusValue = 'paid'
                 else if (filters.status === 'Cancelado') statusValue = 'cancelled'
                 
-                // Aplica filtros através do hook customizado
-                updateFilters({
+                // Formatação correta das datas para incluir o dia inteiro
+                let startDate = filters.periodo
+                let endDate = filters.periodo ? `${filters.periodo}T23:59:59.999Z` : undefined
+                
+                const filtersToApply = {
                   status: statusValue as any,
-                  startDate: filters.periodo,
+                  period: filters.periodo ? ('custom' as const) : undefined,
+                  startDate: startDate,
+                  endDate: endDate,
                   // TODO: Implementar busca por ID do paciente baseado no nome
-                })
+                }
+                
+                console.log('📤 Enviando filtros para API:', filtersToApply)
+                
+                // Aplica filtros através do hook customizado
+                updateFilters(filtersToApply)
               }}
             >
               Aplicar Filtros
