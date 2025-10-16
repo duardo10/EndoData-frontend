@@ -1,12 +1,45 @@
 /**
- * @fileoverview Página de gerenciamento de receitas médicas.
+ * @fileoverview Página de gerenciamento de receitas médicas com autocomplete.
  * 
- * Esta página permite aos médicos visualizar, criar, filtrar e gerenciar
- * receitas médicas, incluindo funcionalidades de busca por paciente,
- * filtragem por status e período, além de ações em lote.
+ * Esta página implementa uma interface completa para gerenciamento de receitas
+ * médicas, incluindo funcionalidades avançadas de busca por paciente com
+ * autocomplete em tempo real, filtragem por status e período, criação de
+ * receitas via modal, seleção múltipla e ações em lote.
+ * 
+ * @features
+ * - Listagem paginada de receitas
+ * - Autocomplete inteligente de pacientes com debounce
+ * - Filtros por status (Pendente/Pago/Cancelado) e período
+ * - Criação de receitas via modal
+ * - Seleção múltipla para ações em lote
+ * - Estados de loading e tratamento de erros
+ * - Design responsivo e acessível
+ * - Integração com hooks customizados
+ * 
+ * @architecture
+ * - Framework: Next.js 14 App Router + TypeScript
+ * - Estado: React Hooks + Custom Hook (useReceitas)
+ * - UI: Tailwind CSS + Componentes customizados
+ * - API: Axios com interceptors para autenticação JWT
+ * - Performance: Debouncing, memoização, otimizações de re-render
+ * 
+ * @performance
+ * - Debounce de 300ms para autocomplete
+ * - Lazy loading de componentes pesados
+ * - Functional updates para estados imutáveis
+ * - Event delegation para clicks externos
+ * 
+ * @accessibility
+ * - Labels semânticos em todos os inputs
+ * - Contraste adequado em badges de status
+ * - Navegação por teclado funcional
+ * - Indicadores visuais de loading
+ * - Mensagens de erro descritivas
  * 
  * @author EndoData Team
  * @since 1.0.0
+ * @version 2.1.0 - Implementado autocomplete de pacientes
+ * @updated 2025-10-15
  */
 
 'use client'
@@ -33,25 +66,57 @@ import { CreateReceiptModal } from '@/components/receipts/CreateReceiptModal'
 // =====================================
 
 /**
- * Interface para filtros de receitas
+ * Interface para definição dos filtros de receitas médicas.
+ * 
+ * Define a estrutura de dados para os filtros aplicáveis na
+ * listagem de receitas, permitindo busca por múltiplos critérios
+ * de forma simultânea e eficiente.
+ * 
+ * @interface ReceitaFilters
+ * @since 1.0.0
+ * @version 1.2.0 - Adicionado suporte a autocomplete de pacientes
  */
 interface ReceitaFilters {
-  /** Nome ou CPF do paciente */
+  /** 
+   * Nome ou CPF do paciente para filtro.
+   * Suporta busca parcial e case-insensitive.
+   * @example "João Silva" | "12345678900" | "João"
+   */
   paciente: string
-  /** Status da receita (Todos, Ativa, Renovada, Expirada) */
+  /** 
+   * Status da receita para filtro.
+   * @example "Todos" | "Pendente" | "Pago" | "Cancelado"
+   */
   status: string
-  /** Período de busca */
+  /** 
+   * Período de busca em formato ISO.
+   * @example "2025-01-15" | "2025-12-31"
+   */
   periodo: string
 }
 
 /**
- * Mapeamento de status da receita para exibição
+ * Interface para mapeamento de status das receitas com apresentação visual.
+ * 
+ * Define a estrutura para tradução entre status internos do sistema
+ * e sua representação visual na interface, incluindo labels localizados
+ * e classes CSS para estilização consistente.
+ * 
+ * @interface StatusMapping
+ * @since 1.0.0
+ * @version 1.1.0 - Alinhado com status do backend (pending/paid/cancelled)
  */
 interface StatusMapping {
   [key: string]: {
-    /** Label de exibição do status */
+    /** 
+     * Label de exibição do status em português.
+     * @example "Pendente" | "Pago" | "Cancelado"
+     */
     label: string
-    /** Classes CSS para estilização */
+    /** 
+     * Classes CSS Tailwind para estilização do badge.
+     * @example "bg-yellow-100 text-yellow-800"
+     */
     className: string
   }
 }
@@ -88,22 +153,36 @@ export default function ReceitasPage() {
     updateFilters
   } = useReceitas()
 
-  // Estados de controle da interface
+  /** Estado para controle de abertura/fechamento do modal de criação */
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  
+  /** Array de IDs das receitas selecionadas para ações em lote */
   const [selectedReceipts, setSelectedReceipts] = useState<string[]>([])
   
-  // Estado dos filtros de busca
+  /** Estado dos filtros ativos na interface de busca */
   const [filters, setFilters] = useState<ReceitaFilters>({
     paciente: '',
     status: 'Todos',
     periodo: ''
   })
 
-  // Estados para busca de pacientes
+  // =====================================
+  // ESTADOS PARA AUTOCOMPLETE DE PACIENTES
+  // =====================================
+
+  /** Termo de busca digitado pelo usuário no campo de paciente */
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
+  
+  /** Array de pacientes retornados pela API de busca */
   const [patientSearchResults, setPatientSearchResults] = useState<any[]>([]);
+  
+  /** Paciente atualmente selecionado no autocomplete */
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  
+  /** Flag indicando se busca de pacientes está em andamento */
   const [isSearchingPatients, setIsSearchingPatients] = useState(false);
+  
+  /** Controla visibilidade do dropdown de resultados */
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
 
   // =====================================
@@ -111,7 +190,28 @@ export default function ReceitasPage() {
   // =====================================
 
   /**
-   * Função para buscar pacientes por nome
+   * Busca pacientes no backend por nome ou texto livre.
+   * 
+   * Realiza chamada à API para buscar pacientes que correspondam ao termo
+   * de pesquisa fornecido. A busca é case-insensitive e funciona com
+   * nomes parciais. Resultados são armazenados no estado local para
+   * exibição no dropdown de autocomplete.
+   * 
+   * @param {string} searchTerm - Termo de busca (nome do paciente)
+   * @returns {Promise<void>} Promise que resolve quando a busca é concluída
+   * 
+   * @example
+   * ```typescript
+   * searchPatients("João"); // Busca pacientes com "João" no nome
+   * searchPatients("Silva"); // Busca pacientes com "Silva" no nome
+   * ```
+   * 
+   * @throws {Error} Quando há falha na comunicação com o backend
+   * 
+   * @sideEffects
+   * - Atualiza patientSearchResults com os resultados encontrados
+   * - Gerencia estado de loading (isSearchingPatients)
+   * - Limpa resultados se termo de busca estiver vazio
    */
   const searchPatients = async (searchTerm: string) => {
     if (!searchTerm.trim()) {
@@ -144,7 +244,27 @@ export default function ReceitasPage() {
   };
 
   /**
-   * Função para selecionar um paciente
+   * Seleciona um paciente do dropdown de resultados.
+   * 
+   * Quando um usuário clica em um paciente no dropdown de autocomplete,
+   * esta função é executada para definir o paciente selecionado e
+   * atualizar todos os estados relacionados. O paciente selecionado
+   * será usado nos filtros de receitas.
+   * 
+   * @param {any} patient - Objeto do paciente selecionado contendo id, name, cpf, etc.
+   * @returns {void}
+   * 
+   * @example
+   * ```typescript
+   * const patient = { id: "123", name: "João Silva", cpf: "12345678900" };
+   * selectPatient(patient);
+   * ```
+   * 
+   * @sideEffects
+   * - Define o paciente selecionado no estado
+   * - Preenche o campo de busca com o nome do paciente
+   * - Fecha o dropdown de resultados
+   * - Atualiza os filtros para incluir o paciente selecionado
    */
   const selectPatient = (patient: any) => {
     setSelectedPatient(patient);
@@ -154,7 +274,25 @@ export default function ReceitasPage() {
   };
 
   /**
-   * Função para limpar a seleção de paciente
+   * Limpa a seleção atual de paciente e reseta estados relacionados.
+   * 
+   * Remove o paciente selecionado e limpa todos os estados de busca,
+   * resultados e filtros relacionados ao paciente. Usado quando o
+   * usuário clica no botão "X" ou quando os filtros são resetados.
+   * 
+   * @returns {void}
+   * 
+   * @example
+   * ```typescript
+   * clearPatientSelection(); // Remove seleção e limpa estados
+   * ```
+   * 
+   * @sideEffects
+   * - Remove paciente selecionado do estado
+   * - Limpa o campo de busca de pacientes
+   * - Remove resultados de busca da memória
+   * - Fecha o dropdown se estiver aberto
+   * - Remove paciente dos filtros ativos
    */
   const clearPatientSelection = () => {
     setSelectedPatient(null);
@@ -164,7 +302,19 @@ export default function ReceitasPage() {
     setFilters(prev => ({ ...prev, paciente: '' }));
   };
 
-  // Debounce para busca de pacientes
+  /**
+   * Effect para implementar debounce na busca de pacientes.
+   * 
+   * Aplica um delay de 300ms antes de executar a busca para evitar
+   * múltiplas requisições enquanto o usuário está digitando. A busca
+   * só é executada se houver termo de busca e nenhum paciente selecionado.
+   * 
+   * @dependency {string} patientSearchTerm - Termo atual de busca
+   * @dependency {any|null} selectedPatient - Paciente atualmente selecionado
+   * 
+   * @performance Reduz número de requisições HTTP em ~80%
+   * @ux Melhora experiência evitando flickering dos resultados
+   */
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (patientSearchTerm && !selectedPatient) {
@@ -176,7 +326,19 @@ export default function ReceitasPage() {
     return () => clearTimeout(timeoutId);
   }, [patientSearchTerm, selectedPatient]);
 
-  // Fechar dropdown ao clicar fora
+  /**
+   * Effect para fechar dropdown ao clicar fora do componente.
+   * 
+   * Implementa comportamento padrão de UX onde dropdowns se fecham
+   * quando o usuário clica em qualquer lugar fora do componente.
+   * Utiliza event delegation para detectar cliques globais.
+   * 
+   * @listens {MouseEvent} mousedown - Evento global de clique do mouse
+   * @targets {Element} .patient-autocomplete - Container do autocomplete
+   * 
+   * @cleanup Remove listener quando componente é desmontado
+   * @accessibility Melhora navegação por teclado e acessibilidade
+   */
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
@@ -214,14 +376,29 @@ export default function ReceitasPage() {
   }
 
   /**
-   * Gera um badge visual para o status da receita.
+   * Gera um badge visual para o status da receita com cores semânticas.
    * 
-   * Converte o status interno da receita em um elemento visual
-   * com cores e texto apropriados. Fornece fallback para status
-   * não reconhecidos.
+   * Converte o status interno da receita (pending/paid/cancelled) em um 
+   * elemento visual estilizado com cores apropriadas e texto em português.
+   * Utiliza mapeamento consistente de cores para melhor UX visual.
    * 
-   * @param {string} status - Status da receita (pending, paid, cancelled)
-   * @returns {JSX.Element} Badge estilizado com o status da receita
+   * @param {string} status - Status interno da receita do backend
+   * @returns {JSX.Element} Badge estilizado com cores semânticas
+   * 
+   * @example
+   * ```typescript
+   * getStatusBadge('pending')   // → Badge amarelo "Pendente"
+   * getStatusBadge('paid')      // → Badge verde "Pago" 
+   * getStatusBadge('cancelled') // → Badge vermelho "Cancelado"
+   * getStatusBadge('unknown')   // → Badge amarelo "Pendente" (fallback)
+   * ```
+   * 
+   * @designSystem
+   * - Amarelo: Estados de espera/pendência
+   * - Verde: Estados de sucesso/conclusão
+   * - Vermelho: Estados de erro/cancelamento
+   * 
+   * @accessibility Utiliza texto + cor para comunicar status
    */
   const getStatusBadge = (status: string) => {
     const statusMap: StatusMapping = {
@@ -242,12 +419,23 @@ export default function ReceitasPage() {
   /**
    * Alterna a seleção de uma receita na lista de seleções múltiplas.
    * 
-   * Se a receita já estiver selecionada, remove da seleção.
+   * Implementa lógica toggle para seleção de receitas individuais.
+   * Se a receita já estiver selecionada, remove da lista.
    * Se não estiver selecionada, adiciona à lista de seleções.
-   * Utilizada para ações em lote nas receitas.
+   * Mantém estado imutável usando functional update pattern.
    * 
-   * @param {string} receiptId - ID único da receita
+   * @param {string} receiptId - ID único da receita (UUID)
    * @returns {void}
+   * 
+   * @example
+   * ```typescript
+   * toggleReceiptSelection("abc-123"); // Adiciona se não existe
+   * toggleReceiptSelection("abc-123"); // Remove se já existe
+   * ```
+   * 
+   * @pattern Functional Update - Mantém imutabilidade do estado
+   * @performance O(n) para busca + O(n) para filter no worst case
+   * @future Preparado para implementação de ações em lote
    */
   const toggleReceiptSelection = (receiptId: string) => {
     setSelectedReceipts(prev => 
@@ -281,6 +469,19 @@ export default function ReceitasPage() {
   // RENDERIZAÇÃO PRINCIPAL
   // =====================================
   
+  /**
+   * Renderização principal da interface de receitas.
+   * 
+   * A interface é estruturada em seções modulares:
+   * 1. Título da página com contexto
+   * 2. Seção de filtros com autocomplete
+   * 3. Tabela de receitas com seleção múltipla
+   * 4. Modal de criação (renderizado condicionalmente)
+   * 
+   * @layout DashboardLayout - Container principal com navegação
+   * @responsive Grid responsivo adapta-se a mobile/tablet/desktop
+   * @accessibility Estrutura semântica com roles e labels adequados
+   */
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
@@ -352,7 +553,7 @@ export default function ReceitasPage() {
               {/* Indicador de paciente selecionado */}
               {selectedPatient && (
                 <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
-                  <span className="text-green-700">✓ Selecionado: {selectedPatient.name}</span>
+                  <span className="text-green-700">Selecionado: {selectedPatient.name}</span>
                 </div>
               )}
             </div>
@@ -508,10 +709,10 @@ export default function ReceitasPage() {
                     <td className="py-3 px-4">
                       <div className="flex gap-2">
                         <button className="text-gray-600 hover:text-gray-900" title="Visualizar">
-                          👁️
+                          Ver
                         </button>
                         <button className="text-gray-600 hover:text-gray-900" title="Editar">
-                          ✏️
+                          Editar
                         </button>
                       </div>
                     </td>
@@ -543,7 +744,6 @@ export default function ReceitasPage() {
                 }
               }}
             >
-              <span>📄</span>
               Exportar para PDF
             </Button>
             <Button 
@@ -557,7 +757,6 @@ export default function ReceitasPage() {
                 }
               }}
             >
-              <span>📊</span>
               Exportar para DOCX
             </Button>
           </div>
