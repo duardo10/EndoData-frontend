@@ -74,10 +74,28 @@
 }
 @layer base {
   * {
-    @apply border-border;
+    /* @apply border-border; - Removido para evitar bordas indesejadas */
+    margin: 0;
+    padding: 0;
+    border: none !important;
+    border-color: transparent !important;
+  }
+  *:before, *:after {
+    border: none !important;
+    border-color: transparent !important;
   }
   body {
     @apply bg-background text-foreground;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-color: transparent !important;
+  }
+  html {
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-color: transparent !important;
   }
 }
 
@@ -104,6 +122,7 @@
 /* Estilos para Textbox - Formulários */
 .textbox {
   @apply relative opacity-100;
+  border: none !important;
 }
 
 .textbox-input {
@@ -130,6 +149,7 @@
   line-height: 22px !important;
   font-weight: 500 !important;
   color: #374151 !important;
+  border: none !important;
 }
 
 /* Estados dos inputs */
@@ -144,7 +164,6 @@
   background: #FFFFFF !important;
   border-color: #DEE1E6 !important;
   box-shadow: none !important;
-  ring: none !important;
 }
 
 .textbox-input:disabled {
@@ -158,9 +177,69 @@
   fill: #565D6D !important;
 }
 
+/* FORÇA TODOS OS INPUTS A TEREM BORDAS BRANCAS */
+input, textarea, select, button {
+  border-color: #FFFFFF !important;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: #FFFFFF !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 /* Melhorias para telas muito pequenas */
 @media (max-width: 640px) {
   .sidebar-mobile {
     @apply shadow-lg;
   }
+}
+
+/* Header Container */
+.header-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #FFFFFF;
+  border: none !important;
+  border-bottom: 1px solid #DEE1E6 !important;
+  border-top: none !important;
+  box-shadow: none !important;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+/* Força remoção de qualquer borda nos elementos do header */
+.header-container * {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Força remoção de bordas na parte superior da página */
+body {
+  border-top: 1px solid #FFFFFF !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+html {
+  border-top: 1px solid #FFFFFF !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Remove qualquer borda que possa aparecer no container principal */
+.min-h-screen {
+  border-top: 1px solid #FFFFFF !important;
+  margin-top: 0 !important;
+}
+
+/* Força qualquer possível separação a ser branca */
+* {
+  border-color: #FFFFFF !important;
 }

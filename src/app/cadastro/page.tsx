@@ -62,6 +62,7 @@ import React, { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Logo } from '@/components/ui/logo'
 
 /**
  * Interface para os dados do formulário de cadastro
@@ -223,8 +224,26 @@ export default function CadastroPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header fixo */}
+      <div className="header-container">
+        {/* Logo no canto esquerdo */}
+        <div className="flex items-center space-x-2">
+          <Logo className="w-7 h-7 text-blue-600" />
+          <span className="text-xl font-bold text-blue-600">EndoData</span>
+        </div>
+        
+        {/* Ícone de logout no canto direito */}
+        <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200 p-1">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Conteúdo principal com espaçamento para o header fixo */}
+      <div className="pt-20 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
         {/* Título e Subtítulo */}
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -335,6 +354,7 @@ export default function CadastroPage() {
             </Button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   )
