@@ -16,7 +16,7 @@
 // =====================================
 
 // React hooks
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 // Componentes de layout e UI
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
@@ -99,7 +99,97 @@ export default function ReceitasPage() {
     periodo: ''
   })
 
+  // Estados para busca de pacientes
+  const [patientSearchTerm, setPatientSearchTerm] = useState('');
+  const [patientSearchResults, setPatientSearchResults] = useState<any[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [isSearchingPatients, setIsSearchingPatients] = useState(false);
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false);
+
   // =====================================
+  // FUNÇÕES DE BUSCA DE PACIENTES
+  // =====================================
+
+  /**
+   * Função para buscar pacientes por nome
+   */
+  const searchPatients = async (searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      setPatientSearchResults([]);
+      return;
+    }
+
+    setIsSearchingPatients(true);
+    try {
+      const response = await fetch(`http://localhost:4000/api/patients/search?searchText=${encodeURIComponent(searchTerm)}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPatientSearchResults(data.patients || []);
+      } else {
+        console.error('Erro ao buscar pacientes:', response.status);
+        setPatientSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar pacientes:', error);
+      setPatientSearchResults([]);
+    } finally {
+      setIsSearchingPatients(false);
+    }
+  };
+
+  /**
+   * Função para selecionar um paciente
+   */
+  const selectPatient = (patient: any) => {
+    setSelectedPatient(patient);
+    setPatientSearchTerm(patient.name);
+    setShowPatientDropdown(false);
+    setFilters(prev => ({ ...prev, paciente: patient.name }));
+  };
+
+  /**
+   * Função para limpar a seleção de paciente
+   */
+  const clearPatientSelection = () => {
+    setSelectedPatient(null);
+    setPatientSearchTerm('');
+    setPatientSearchResults([]);
+    setShowPatientDropdown(false);
+    setFilters(prev => ({ ...prev, paciente: '' }));
+  };
+
+  // Debounce para busca de pacientes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (patientSearchTerm && !selectedPatient) {
+        searchPatients(patientSearchTerm);
+        setShowPatientDropdown(true);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [patientSearchTerm, selectedPatient]);
+
+  // Fechar dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.patient-autocomplete')) {
+        setShowPatientDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // ===================================== 
   // FUNÇÕES DE MANIPULAÇÃO
   // =====================================
 
@@ -203,18 +293,68 @@ export default function ReceitasPage() {
         <Card className="p-6">
           <h2 className="text-lg font-semibold mb-4">Filtrar Receitas</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Filtro por Paciente */}
-            <div>
+            {/* Filtro por Paciente com Autocomplete */}
+            <div className="relative patient-autocomplete">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Paciente
               </label>
-              <Input
-                type="text"
-                placeholder="Nome do Paciente"
-                value={filters.paciente}
-                onChange={(e) => setFilters(prev => ({ ...prev, paciente: e.target.value }))}
-                className="w-full"
-              />
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="Digite o nome do paciente"
+                  value={patientSearchTerm}
+                  onChange={(e) => {
+                    setPatientSearchTerm(e.target.value);
+                    if (!e.target.value) {
+                      clearPatientSelection();
+                    }
+                  }}
+                  onFocus={() => {
+                    if (patientSearchResults.length > 0) {
+                      setShowPatientDropdown(true);
+                    }
+                  }}
+                  className="w-full pr-10"
+                />
+                {selectedPatient && (
+                  <button
+                    onClick={clearPatientSelection}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    type="button"
+                  >
+                    ✕
+                  </button>
+                )}
+                {isSearchingPatients && (
+                  <div className="absolute right-8 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Dropdown de resultados */}
+              {showPatientDropdown && patientSearchResults.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                  {patientSearchResults.map((patient) => (
+                    <button
+                      key={patient.id}
+                      onClick={() => selectPatient(patient)}
+                      className="w-full px-4 py-2 text-left hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
+                      type="button"
+                    >
+                      <div className="font-medium">{patient.name}</div>
+                      <div className="text-sm text-gray-500">{patient.cpf}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              
+              {/* Indicador de paciente selecionado */}
+              {selectedPatient && (
+                <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
+                  <span className="text-green-700">✓ Selecionado: {selectedPatient.name}</span>
+                </div>
+              )}
             </div>
 
             {/* Filtro por Status */}
@@ -271,7 +411,8 @@ export default function ReceitasPage() {
                   period: filters.periodo ? ('custom' as const) : undefined,
                   startDate: startDate,
                   endDate: endDate,
-                  // TODO: Implementar busca por ID do paciente baseado no nome
+                  // Inclui patientId se um paciente foi selecionado
+                  patientId: selectedPatient?.id || undefined,
                 }
                 
                 console.log('📤 Enviando filtros para API:', filtersToApply)
@@ -287,6 +428,7 @@ export default function ReceitasPage() {
               onClick={() => {
                 // Limpa filtros locais e do hook
                 setFilters({ paciente: '', status: 'Todos', periodo: '' })
+                clearPatientSelection()
                 updateFilters({})
               }}
             >
