@@ -60,6 +60,8 @@ import { Input } from '@/components/ui/input'
 // Hooks customizados e componentes específicos
 import { useReceitas } from '@/hooks/useReceitas'
 import { CreateReceiptModal } from '@/components/receipts/CreateReceiptModal'
+import { ViewReceiptModal } from '@/components/receipts/ViewReceiptModal'
+import { EditReceiptModal } from '@/components/receipts/EditReceiptModal'
 
 // =====================================
 // INTERFACES E TIPOS
@@ -155,6 +157,15 @@ export default function ReceitasPage() {
 
   /** Estado para controle de abertura/fechamento do modal de criação */
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  
+  /** Estado para controle de abertura/fechamento do modal de visualização */
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  
+  /** Estado para controle de abertura/fechamento do modal de edição */
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  
+  /** Receita selecionada para visualização ou edição */
+  const [selectedReceipt, setSelectedReceipt] = useState<any>(null)
   
   /** Array de IDs das receitas selecionadas para ações em lote */
   const [selectedReceipts, setSelectedReceipts] = useState<string[]>([])
@@ -371,6 +382,69 @@ export default function ReceitasPage() {
       await refreshReceipts()
     } catch (error) {
       console.error('Erro ao criar receita:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Abre o modal de visualização de receita.
+   * 
+   * Define a receita selecionada e abre o modal de visualização
+   * para exibir todos os detalhes da receita em modo somente leitura.
+   * 
+   * @param {any} receipt - Dados da receita a ser visualizada
+   * @returns {void}
+   */
+  const handleViewReceipt = (receipt: any) => {
+    setSelectedReceipt(receipt)
+    setIsViewModalOpen(true)
+  }
+
+  /**
+   * Abre o modal de edição de receita.
+   * 
+   * Define a receita selecionada e abre o modal de edição
+   * para permitir alteração dos dados da receita.
+   * 
+   * @param {any} receipt - Dados da receita a ser editada
+   * @returns {void}
+   */
+  const handleEditReceipt = (receipt: any) => {
+    setSelectedReceipt(receipt)
+    setIsEditModalOpen(true)
+  }
+
+  /**
+   * Manipula a edição/atualização de uma receita existente.
+   * 
+   * Chama o serviço de atualização de receita e atualiza a lista
+   * após sucesso. Fecha o modal de edição automaticamente.
+   * 
+   * @param {any} receiptData - Dados atualizados da receita
+   * @returns {Promise<void>}
+   * @throws {Error} Quando ocorre erro na atualização da receita
+   */
+  const handleUpdateReceipt = async (receiptData: any) => {
+    try {
+      // Simular chamada de API para atualizar receita
+      const response = await fetch(`http://localhost:4000/api/receipts/${selectedReceipt.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify(receiptData)
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar receita')
+      }
+
+      await refreshReceipts()
+      setIsEditModalOpen(false)
+      setSelectedReceipt(null)
+    } catch (error) {
+      console.error('Erro ao atualizar receita:', error)
       throw error
     }
   }
@@ -708,10 +782,18 @@ export default function ReceitasPage() {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex gap-2">
-                        <button className="text-gray-600 hover:text-gray-900" title="Visualizar">
+                        <button 
+                          className="text-blue-600 hover:text-blue-900 font-medium" 
+                          title="Visualizar"
+                          onClick={() => handleViewReceipt(receipt)}
+                        >
                           Ver
                         </button>
-                        <button className="text-gray-600 hover:text-gray-900" title="Editar">
+                        <button 
+                          className="text-green-600 hover:text-green-900 font-medium" 
+                          title="Editar"
+                          onClick={() => handleEditReceipt(receipt)}
+                        >
                           Editar
                         </button>
                       </div>
@@ -763,10 +845,30 @@ export default function ReceitasPage() {
         </Card>
       </div>
       
+      {/* Modais */}
       <CreateReceiptModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={handleCreateReceipt}
+      />
+      
+      <ViewReceiptModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false)
+          setSelectedReceipt(null)
+        }}
+        receipt={selectedReceipt}
+      />
+      
+      <EditReceiptModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setSelectedReceipt(null)
+        }}
+        receipt={selectedReceipt}
+        onSave={handleUpdateReceipt}
       />
     </DashboardLayout>
   )
