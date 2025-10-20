@@ -1,5 +1,5 @@
 /**
- * @fileoverview Página de gerenciamento de receitas médicas com autocomplete.
+ * @fileoverview Página de gerenciamento de receitas médicas com funcionalidades avançadas.
  * 
  * Esta página implementa uma interface completa para gerenciamento de receitas
  * médicas, incluindo funcionalidades avançadas de busca por paciente com
@@ -7,8 +7,25 @@
  * receitas via modal, seleção múltipla e ações em lote.
  * 
  * @features
- * - Listagem paginada de receitas
+ * - Listagem paginada de receitas com scroll infinito otimizado
  * - Autocomplete inteligente de pacientes com debounce
+ * - Sistema de seleção múltipla com barra de ações dinâmica
+ * - Impressão profissional de receitas (individuais, selecionadas ou todas)
+ * - Scroll infinito restrito ao container da tabela (altura fixa h-96)
+ * - Botão para impressão de todas as receitas do sistema via API
+ * - Interface responsiva e intuitiva com feedback visual
+ * 
+ * @improvements
+ * - Implementado scroll infinito apenas dentro da tabela (não página inteira)
+ * - Adicionado sistema de seleção com checkbox para múltiplas receitas
+ * - Criada barra de ações que aparece dinamicamente quando há seleções
+ * - Função de impressão com layout profissional e formatação adequada
+ * - Botão inteligente para imprimir todas as receitas sem necessidade de scroll
+ * - Otimização da API para buscar todas as receitas de uma vez (limite 1000)
+ * - Indicadores visuais de loading e feedback para o usuário
+ * 
+ * @author Sistema EndoData
+ * @version 2.0 - Versão otimizada com scroll infinito e impressão avançada
  * - Filtros por status (Pendente/Pago/Cancelado) e período
  * - Criação de receitas via modal
  * - Seleção múltipla para ações em lote
@@ -173,7 +190,19 @@ export default function ReceitasPage() {
   /** Receita selecionada para visualização ou edição */
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null)
   
-  /** Array de IDs das receitas selecionadas para ações em lote */
+  /** 
+   * Array de IDs das receitas selecionadas para ações em lote.
+   * 
+   * Sistema de seleção múltipla implementado com as seguintes funcionalidades:
+   * - Seleção individual via checkbox em cada linha da tabela
+   * - Seleção em massa via checkbox no cabeçalho da tabela  
+   * - Barra de ações dinâmica que aparece quando há receitas selecionadas
+   * - Ações disponíveis: impressão selecionadas e limpeza de seleção
+   * - Estado reativo que controla visibilidade de elementos da interface
+   * - Integração com sistema de impressão profissional
+   * 
+   * @type {string[]} Array contendo os IDs das receitas marcadas
+   */
   const [selectedReceipts, setSelectedReceipts] = useState<string[]>([])
   
   /** Estado dos filtros ativos na interface de busca */
@@ -405,6 +434,316 @@ export default function ReceitasPage() {
   }
 
   /**
+   * Gera conteúdo HTML para impressão/exportação das receitas.
+   * 
+   * @param {any[]} receiptsData - Array de receitas a serem processadas
+   * @param {string} title - Título para o cabeçalho do documento
+   * @returns {string} HTML formatado para impressão
+   */
+  const generatePrintContent = (receiptsData: any[], title: string) => {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${title}</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px; 
+              color: #333;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #333;
+              padding-bottom: 10px;
+              margin-bottom: 30px;
+            }
+            .receipt {
+              margin-bottom: 40px;
+              border: 1px solid #ddd;
+              padding: 20px;
+              border-radius: 8px;
+              page-break-inside: avoid;
+            }
+            .receipt-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 15px;
+              border-bottom: 1px solid #eee;
+              padding-bottom: 10px;
+            }
+            .receipt-info {
+              margin-bottom: 15px;
+            }
+            .receipt-info div {
+              margin-bottom: 5px;
+            }
+            .items-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 15px;
+            }
+            .items-table th,
+            .items-table td {
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: left;
+            }
+            .items-table th {
+              background-color: #f5f5f5;
+              font-weight: bold;
+            }
+            .total {
+              text-align: right;
+              font-weight: bold;
+              font-size: 16px;
+              margin-top: 10px;
+            }
+            .status {
+              display: inline-block;
+              padding: 4px 8px;
+              border-radius: 4px;
+              font-size: 12px;
+              font-weight: bold;
+            }
+            .status-pending { background-color: #fef3c7; color: #92400e; }
+            .status-paid { background-color: #d1fae5; color: #065f46; }
+            .status-cancelled { background-color: #fee2e2; color: #991b1b; }
+            @media print {
+              body { margin: 0; }
+              .receipt { page-break-after: always; }
+              .receipt:last-child { page-break-after: avoid; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>EndoData - ${title}</h1>
+            <p>Data de Geração: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+            <p>Total de Receitas: ${receiptsData.length}</p>
+          </div>
+          
+          ${receiptsData.map((receipt: any) => `
+            <div class="receipt">
+              <div class="receipt-header">
+                <h3>Receita #${receipt.id.substring(0, 8)}</h3>
+                <span class="status status-${receipt.status}">
+                  ${receipt.status === 'pending' ? 'Pendente' : 
+                    receipt.status === 'paid' ? 'Pago' : 'Cancelado'}
+                </span>
+              </div>
+              
+              <div class="receipt-info">
+                <div><strong>Paciente:</strong> ${receipt.patient?.name || 'N/A'}</div>
+                <div><strong>CPF:</strong> ${receipt.patient?.cpf || 'N/A'}</div>
+                <div><strong>Médico:</strong> ${receipt.user?.name || 'N/A'}</div>
+                <div><strong>CRM:</strong> ${receipt.user?.crm || 'N/A'}</div>
+                <div><strong>Data:</strong> ${new Date(receipt.date).toLocaleDateString('pt-BR')}</div>
+              </div>
+
+              ${receipt.items && receipt.items.length > 0 ? `
+                <table class="items-table">
+                  <thead>
+                    <tr>
+                      <th>Descrição</th>
+                      <th>Quantidade</th>
+                      <th>Valor Unitário</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${receipt.items.map((item: any) => `
+                      <tr>
+                        <td>${item.description}</td>
+                        <td>${item.quantity}</td>
+                        <td>R$ ${parseFloat(item.unitPrice.toString()).toFixed(2)}</td>
+                        <td>R$ ${parseFloat(item.totalPrice.toString()).toFixed(2)}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              ` : '<p>Nenhum item encontrado.</p>'}
+              
+              <div class="total">
+                <strong>Valor Total: R$ ${receipt.totalAmount.toFixed(2)}</strong>
+              </div>
+            </div>
+          `).join('')}
+        </body>
+      </html>
+    `
+  }
+
+  /**
+   * Exporta receitas para PDF usando a funcionalidade nativa do navegador.
+   * 
+   * Gera uma página formatada e abre o dialog de impressão do navegador,
+   * onde o usuário pode escolher "Salvar como PDF" como destino.
+   * 
+   * @returns {void}
+   */
+
+
+  /**
+   * Imprime as receitas selecionadas com layout profissional.
+   * 
+   * Esta função filtra as receitas marcadas como selecionadas no estado
+   * selectedReceipts, gera um documento HTML formatado profissionalmente
+   * e abre uma nova janela para impressão. Inclui validação para garantir
+   * que pelo menos uma receita esteja selecionada antes de proceder.
+   * 
+   * Funcionalidades implementadas:
+   * - Validação de receitas selecionadas
+   * - Geração de HTML com layout profissional
+   * - Abertura de janela de impressão nativa do navegador
+   * - Limpeza automática da seleção após impressão
+   * - Feedback visual para o usuário
+   * 
+   * @function handlePrintSelectedReceipts
+   * @description Gera uma página de impressão com os detalhes das receitas
+   * selecionadas, formatada para impressão física.
+   * 
+   * @returns {void}
+   */
+  const handlePrintSelectedReceipts = () => {
+    // Filtra as receitas selecionadas
+    const receiptsToPrint = receipts.filter(receipt => 
+      selectedReceipts.includes(receipt.id)
+    )
+    
+    if (receiptsToPrint.length === 0) {
+      alert('Selecione pelo menos uma receita para imprimir.')
+      return
+    }
+
+    const title = `${receiptsToPrint.length} Receitas Selecionadas - Impressão`
+    const printContent = generatePrintContent(receiptsToPrint, title)
+
+    // Abre nova janela para impressão
+    const printWindow = window.open('', '_blank')
+    if (printWindow) {
+      printWindow.document.write(printContent)
+      printWindow.document.close()
+      
+      // Aguarda carregamento e inicia impressão
+      setTimeout(() => {
+        printWindow.focus()
+        printWindow.print()
+        
+        // Limpa seleção após imprimir
+        setTimeout(() => {
+          setSelectedReceipts([])
+        }, 1000)
+      }, 500)
+    } else {
+      alert('Não foi possível abrir a janela de impressão. Verifique se o bloqueador de pop-ups está desabilitado.')
+    }
+  }
+
+  /**
+   * Imprime todas as receitas do sistema sem necessidade de scroll.
+   * 
+   * Esta função otimizada busca todas as receitas diretamente via API
+   * (até 1000 registros) em uma única requisição, eliminando a necessidade
+   * do usuário fazer scroll infinito para carregar todas as receitas.
+   * Inclui indicador de loading visual e tratamento completo de erros.
+   * 
+   * Principais características:
+   * - Busca via API com limite alto (1000 receitas)
+   * - Indicador de loading com animação durante a busca
+   * - Autenticação automática via token armazenado
+   * - Geração de documento profissional para impressão
+   * - Tratamento robusto de erros e feedback ao usuário
+   * - Não depende do estado local da tabela
+   * 
+   * @async
+   * @function handlePrintAllReceipts
+   * @description Busca e imprime todas as receitas do sistema de forma otimizada
+   * @returns {Promise<void>}
+   */
+  const handlePrintAllReceipts = async () => {
+    try {
+      // Busca todas as receitas de uma vez (sem paginação)
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        alert('Token de autenticação não encontrado.')
+        return
+      }
+
+      // Mostra indicador de carregamento
+      const loadingAlert = document.createElement('div')
+      loadingAlert.innerHTML = `
+        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                    background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 1000; display: flex; align-items: center; gap: 10px;">
+          <div style="width: 20px; height: 20px; border: 2px solid #e5e7eb; border-top: 2px solid #3b82f6; 
+                      border-radius: 50%; animation: spin 1s linear infinite;"></div>
+          <span>Buscando todas as receitas...</span>
+        </div>
+        <style>
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        </style>
+      `
+      document.body.appendChild(loadingAlert)
+
+      // Busca todas as receitas sem limite de página
+      const response = await fetch(`http://localhost:4000/api/receipts?limit=1000&page=1`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar receitas: ${response.status}`)
+      }
+
+      const data = await response.json()
+      const allReceipts = data.data || []
+
+      // Remove indicador de carregamento
+      document.body.removeChild(loadingAlert)
+
+      if (allReceipts.length === 0) {
+        alert('Não há receitas para imprimir.')
+        return
+      }
+
+      const title = `${allReceipts.length} Receitas - Impressão Completa`
+      const printContent = generatePrintContent(allReceipts, title)
+
+      // Abre nova janela para impressão
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        printWindow.document.write(printContent)
+        printWindow.document.close()
+        
+        // Aguarda carregamento e inicia impressão
+        setTimeout(() => {
+          printWindow.focus()
+          printWindow.print()
+        }, 500)
+      } else {
+        alert('Não foi possível abrir a janela de impressão. Verifique se o bloqueador de pop-ups está desabilitado.')
+      }
+
+    } catch (error) {
+      // Remove indicador de carregamento em caso de erro
+      const loadingAlert = document.querySelector('div[style*="position: fixed"]')
+      if (loadingAlert) {
+        document.body.removeChild(loadingAlert)
+      }
+      
+      console.error('Erro ao buscar todas as receitas:', error)
+      alert('Erro ao buscar todas as receitas. Tente novamente.')
+    }
+  }
+
+  /**
    * Abre o modal de visualização de receita.
    * 
    * Define a receita selecionada e abre o modal de visualização
@@ -525,9 +864,19 @@ export default function ReceitasPage() {
   }
 
   /**
-   * Alterna a seleção de uma receita na lista de seleções múltiplas.
+   * Alterna o estado de seleção de uma receita específica (toggle).
    * 
-   * Implementa lógica toggle para seleção de receitas individuais.
+   * Função central do sistema de seleção múltipla que gerencia a adição
+   * e remoção de receitas da lista de selecionadas. Utiliza o padrão
+   * functional update para manter a imutabilidade do estado React.
+   * 
+   * Integração com interface:
+   * - Conectada aos checkboxes individuais de cada linha da tabela
+   * - Atualiza automaticamente o estado da barra de ações
+   * - Sincroniza com o checkbox "selecionar todas" no cabeçalho
+   * - Mantém consistência visual dos elementos selecionados
+   * 
+   * Comportamento:
    * Se a receita já estiver selecionada, remove da lista.
    * Se não estiver selecionada, adiciona à lista de seleções.
    * Mantém estado imutável usando functional update pattern.
@@ -543,7 +892,7 @@ export default function ReceitasPage() {
    * 
    * @pattern Functional Update - Mantém imutabilidade do estado
    * @performance O(n) para busca + O(n) para filter no worst case
-   * @future Preparado para implementação de ações em lote
+   * @integration Sistema completo de seleção múltipla e ações em lote
    */
   const toggleReceiptSelection = (receiptId: string) => {
     setSelectedReceipts(prev => 
@@ -746,6 +1095,61 @@ export default function ReceitasPage() {
           </div>
         </Card>
 
+        {/* Barra de Ações para Receitas Selecionadas */}
+        {selectedReceipts.length > 0 && (
+          <Card className="p-4 bg-blue-50 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <svg 
+                    className="w-5 h-5 text-blue-700" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" 
+                    />
+                  </svg>
+                  <div className="text-sm font-medium text-blue-900">
+                    {selectedReceipts.length} receita{selectedReceipts.length > 1 ? 's' : ''} selecionada{selectedReceipts.length > 1 ? 's' : ''}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedReceipts([])}
+                  className="text-xs text-blue-700 hover:text-blue-800 underline"
+                >
+                  Limpar seleção
+                </button>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  onClick={handlePrintSelectedReceipts}
+                  className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                >
+                  <svg 
+                    className="w-4 h-4" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" 
+                    />
+                  </svg>
+                  Imprimir Selecionadas
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Lista de Prescrições */}
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">
@@ -767,7 +1171,23 @@ export default function ReceitasPage() {
             </div>
           )}
 
-          {/* Tabela de receitas com scroll interno */}
+          {/* 
+            Tabela de receitas com scroll infinito otimizado
+            
+            Container com altura fixa (h-96 = 384px) que implementa scroll infinito
+            apenas dentro da tabela, sem afetar o scroll da página principal.
+            
+            Funcionalidades:
+            - Altura fixa de 384px com overflow interno
+            - Scroll infinito detectado via useInfiniteScroll hook
+            - Cabeçalho sticky que permanece visível durante scroll
+            - Loading indicators integrados dentro da tabela
+            - Suporte a seleção múltipla com checkboxes
+            - Responsivo com scroll horizontal automático
+            
+            Esta implementação substitui o scroll infinito da página,
+            proporcionando melhor experiência do usuário e performance.
+          */}
           <div 
             ref={tableContainerRef as any}
             className="h-96 max-h-96 overflow-y-auto overflow-x-auto border border-gray-200 rounded-lg bg-white"
@@ -877,38 +1297,73 @@ export default function ReceitasPage() {
           </div>
         </Card>
 
-        {/* Opções de Exportação */}
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Opções de Exportação</h2>
-          <div className="flex gap-4">
-            <Button 
-              className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
-              onClick={async () => {
-                try {
-                  alert('Funcionalidade de exportação PDF em desenvolvimento. Endpoint /api/receipts/export/pdf não implementado no backend.')
-                  // await exportToPDF()
-                } catch (error) {
-                  console.error('Erro ao exportar PDF:', error)
-                }
-              }}
-            >
-              Exportar para PDF
-            </Button>
-            <Button 
-              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-              onClick={async () => {
-                try {
-                  alert('Funcionalidade de exportação CSV em desenvolvimento. Endpoint /api/receipts/export/csv não implementado no backend.')
-                  // await exportToCSV()
-                } catch (error) {
-                  console.error('Erro ao exportar CSV:', error)
-                }
-              }}
-            >
-              Exportar para DOCX
-            </Button>
-          </div>
-        </Card>
+        {/* Ações rápidas - Gestão e Impressão */}
+        {receipts.length > 0 && (
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              {/* Lado esquerdo - Botões de gestão */}
+              <div className="flex items-center gap-3">
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                  onClick={() => setIsCreateModalOpen(true)}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Adicionar
+                </Button>
+                
+                <Button 
+                  className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  onClick={() => {
+                    if (selectedReceipts.length === 0) {
+                      alert('Selecione pelo menos uma receita para remover.')
+                      return
+                    }
+                    
+                    const confirmDelete = confirm(
+                      `Tem certeza que deseja remover ${selectedReceipts.length} receita${selectedReceipts.length > 1 ? 's' : ''}?`
+                    )
+                    
+                    if (confirmDelete) {
+                      // Aqui você pode implementar a lógica de remoção
+                      console.log('Removendo receitas:', selectedReceipts)
+                      alert(`Funcionalidade de remoção em desenvolvimento. IDs selecionados: ${selectedReceipts.join(', ')}`)
+                    }
+                  }}
+                  disabled={selectedReceipts.length === 0}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Remover ({selectedReceipts.length})
+                </Button>
+              </div>
+
+              {/* Lado direito - Impressão */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">
+                    🖨️ Imprimir todas as receitas do sistema
+                  </span>
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    ({totalReceipts} total)
+                  </span>
+                </div>
+                
+                <Button 
+                  className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                  onClick={handlePrintAllReceipts}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  Imprimir todas ({totalReceipts})
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
       </div>
       
       {/* Modais */}
