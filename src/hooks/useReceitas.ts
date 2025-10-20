@@ -63,6 +63,10 @@ export interface UseReceiptsReturn {
   totalPages: number
   pageSize: number
   
+  // Scroll infinito
+  hasMoreReceipts: boolean
+  loadMoreReceipts: () => Promise<void>
+  
   // Filtros ativos
   filters: ReceiptFilters
   
@@ -73,7 +77,7 @@ export interface UseReceiptsReturn {
   error: ReceiptErrorState
   
   // Operações CRUD
-  fetchReceipts: (newFilters?: ReceiptFilters) => Promise<void>
+  fetchReceipts: (newFilters?: ReceiptFilters, append?: boolean) => Promise<void>
   fetchReceiptById: (id: string) => Promise<void>
   createReceipt: (data: CreateReceiptInput) => Promise<Receipt | null>
   updateReceipt: (id: string, data: UpdateReceiptInput) => Promise<Receipt | null>
@@ -183,7 +187,7 @@ export function useReceitas(initialFilters?: ReceiptFilters): UseReceiptsReturn 
   /**
    * Busca receitas com filtros e paginação
    */
-  const fetchReceipts = useCallback(async (newFilters?: ReceiptFilters) => {
+  const fetchReceipts = useCallback(async (newFilters?: ReceiptFilters, append = false) => {
     setLoading(prev => ({ ...prev, fetching: true }))
     setError(prev => ({ ...prev, fetch: undefined }))
     
@@ -191,7 +195,14 @@ export function useReceitas(initialFilters?: ReceiptFilters): UseReceiptsReturn 
       const finalFilters = { ...filters, ...newFilters }
       const response = await ReceiptService.getReceipts(finalFilters)
       
-      setReceipts(response.data)
+      if (append) {
+        // Modo scroll infinito: adiciona às receitas existentes
+        setReceipts(prev => [...prev, ...response.data])
+      } else {
+        // Modo normal: substitui as receitas
+        setReceipts(response.data)
+      }
+      
       setTotalReceipts(response.total)
       setCurrentPage(response.page)
       setTotalPages(response.totalPages)
@@ -200,7 +211,7 @@ export function useReceitas(initialFilters?: ReceiptFilters): UseReceiptsReturn 
         setFiltersState(finalFilters)
       }
       
-      console.log('✅ Receitas carregadas do backend:', response.data.length, 'receitas')
+      console.log('✅ Receitas carregadas do backend:', response.data.length, 'receitas', append ? '(adicionadas)' : '(substituídas)')
       
     } catch (err: any) {
       // Se for erro 401 (não autorizado), usar dados mock para desenvolvimento
@@ -373,6 +384,33 @@ export function useReceitas(initialFilters?: ReceiptFilters): UseReceiptsReturn 
       setLoading(prev => ({ ...prev, fetching: false }))
     }
   }, [filters])
+
+  /**
+   * Carrega a próxima página de receitas (scroll infinito)
+   */
+  const loadMoreReceipts = useCallback(async () => {
+    // Evita carregamento simultâneo ou se já está na última página
+    if (loading.fetching || currentPage >= totalPages) {
+      console.log('⏸️ Scroll infinito pausado:', { 
+        fetching: loading.fetching, 
+        currentPage, 
+        totalPages,
+        hasMore: currentPage < totalPages 
+      })
+      return
+    }
+    
+    const nextPage = currentPage + 1
+    console.log('🔄 Carregando próxima página:', nextPage, 'de', totalPages)
+    
+    const nextPageFilters = { ...filters, page: nextPage }
+    await fetchReceipts(nextPageFilters, true) // append = true
+  }, [loading.fetching, currentPage, totalPages, filters, fetchReceipts])
+
+  /**
+   * Verifica se há mais dados para carregar
+   */
+  const hasMoreReceipts = currentPage < totalPages && !loading.fetching
 
   /**
    * Busca uma receita específica por ID
@@ -609,6 +647,10 @@ export function useReceitas(initialFilters?: ReceiptFilters): UseReceiptsReturn 
     currentPage,
     totalPages,
     pageSize,
+    
+    // Scroll infinito
+    hasMoreReceipts,
+    loadMoreReceipts,
     
     // Filtros
     filters,

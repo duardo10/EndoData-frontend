@@ -59,6 +59,7 @@ import { Input } from '@/components/ui/input'
 
 // Hooks customizados e componentes específicos
 import { useReceitas } from '@/hooks/useReceitas'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { CreateReceiptModal } from '@/components/receipts/CreateReceiptModal'
 import { ViewReceiptModal } from '@/components/receipts/ViewReceiptModal'
 import { EditReceiptModal } from '@/components/receipts/EditReceiptModal'
@@ -152,7 +153,12 @@ export default function ReceitasPage() {
     error,
     refreshReceipts,
     createReceipt,
-    updateFilters
+    updateFilters,
+    loadMoreReceipts,
+    hasMoreReceipts,
+    totalReceipts,
+    currentPage,
+    totalPages
   } = useReceitas()
 
   /** Estado para controle de abertura/fechamento do modal de criação */
@@ -361,6 +367,18 @@ export default function ReceitasPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // =====================================
+  // SCROLL INFINITO
+  // =====================================
+
+  /** Ref para o container da tabela com scroll */
+  const tableContainerRef = useInfiniteScroll(loadMoreReceipts, {
+    loading: loading.fetching,
+    hasMore: hasMoreReceipts,
+    threshold: 50,
+    root: null // será definido dinamicamente quando o elemento for montado
+  })
 
   // ===================================== 
   // FUNÇÕES DE MANIPULAÇÃO
@@ -730,19 +748,32 @@ export default function ReceitasPage() {
 
         {/* Lista de Prescrições */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Lista de Prescrições</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Lista de Receitas</h2>
+            <div className="text-sm text-gray-500">
+              {receipts.length} de {totalReceipts} receitas 
+              {totalPages > 1 && (
+                <span className="ml-2">
+                  (Página {currentPage} de {totalPages})
+                </span>
+              )}
+            </div>
+          </div>
           
-          {loading.fetching && (
+          {loading.fetching && receipts.length === 0 && (
             <div className="text-center py-8">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               <p className="mt-2 text-gray-600">Carregando receitas...</p>
             </div>
           )}
 
-          {/* Tabela de receitas */}
-          <div className="overflow-x-auto">
+          {/* Tabela de receitas com scroll interno */}
+          <div 
+            ref={tableContainerRef as any}
+            className="h-96 max-h-96 overflow-y-auto overflow-x-auto border border-gray-200 rounded-lg bg-white"
+          >
             <table className="min-w-full table-auto">
-              <thead>
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
                     <input 
@@ -816,6 +847,25 @@ export default function ReceitasPage() {
                     </td>
                   </tr>
                 ))}
+                
+                {/* Indicadores de carregamento dentro da tabela */}
+                {loading.fetching && receipts.length > 0 && (
+                  <tr>
+                    <td colSpan={7} className="text-center py-4">
+                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      <p className="mt-2 text-sm text-gray-600">Carregando mais receitas...</p>
+                    </td>
+                  </tr>
+                )}
+                
+                {/* Indicador de fim dos dados dentro da tabela */}
+                {!hasMoreReceipts && !loading.fetching && receipts.length > 0 && (
+                  <tr>
+                    <td colSpan={7} className="text-center py-4 text-sm text-gray-500">
+                      ✅ Todas as {totalReceipts} receitas foram carregadas
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
 
