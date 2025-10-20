@@ -420,31 +420,47 @@ export default function ReceitasPage() {
    * Chama o serviço de atualização de receita e atualiza a lista
    * após sucesso. Fecha o modal de edição automaticamente.
    * 
+   * IMPORTANTE: O backend atualmente só aceita atualização do campo 'status'.
+   * Outros campos como totalAmount, date e items não são aceitos na API PUT.
+   * 
    * @param {any} receiptData - Dados atualizados da receita
    * @returns {Promise<void>}
    * @throws {Error} Quando ocorre erro na atualização da receita
    */
   const handleUpdateReceipt = async (receiptData: any) => {
     try {
-      // Simular chamada de API para atualizar receita
+      console.log('📤 Dados recebidos para atualização:', receiptData)
+      
+      // Backend atualmente só aceita o campo 'status' para atualização
+      const updatePayload = {
+        status: receiptData.status
+      }
+      
+      console.log('📤 Enviando para API:', updatePayload)
+      
       const response = await fetch(`http://localhost:4000/api/receipts/${selectedReceipt.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
-        body: JSON.stringify(receiptData)
+        body: JSON.stringify(updatePayload)
       })
 
       if (!response.ok) {
-        throw new Error('Erro ao atualizar receita')
+        const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido' }))
+        console.error('❌ Erro da API:', errorData)
+        throw new Error(`Erro ${response.status}: ${errorData.message || 'Erro ao atualizar receita'}`)
       }
+
+      const updatedReceipt = await response.json()
+      console.log('✅ Receita atualizada:', updatedReceipt)
 
       await refreshReceipts()
       setIsEditModalOpen(false)
       setSelectedReceipt(null)
     } catch (error) {
-      console.error('Erro ao atualizar receita:', error)
+      console.error('❌ Erro ao atualizar receita:', error)
       throw error
     }
   }

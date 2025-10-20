@@ -198,32 +198,9 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave }: EditRecei
       return false
     }
 
-    if (!formData.date) {
-      setError('Data é obrigatória')
-      return false
-    }
-
-    if (formData.items.length === 0) {
-      setError('Pelo menos um item é obrigatório')
-      return false
-    }
-
-    for (let i = 0; i < formData.items.length; i++) {
-      const item = formData.items[i]
-      if (!item.description.trim()) {
-        setError(`Descrição do item ${i + 1} é obrigatória`)
-        return false
-      }
-      if (item.quantity <= 0) {
-        setError(`Quantidade do item ${i + 1} deve ser maior que zero`)
-        return false
-      }
-      if (parseFloat(item.unitPrice) <= 0) {
-        setError(`Preço unitário do item ${i + 1} deve ser maior que zero`)
-        return false
-      }
-    }
-
+    // Validações removidas temporariamente devido às limitações do backend
+    // Apenas o status pode ser editado no momento
+    
     return true
   }
 
@@ -241,23 +218,16 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave }: EditRecei
     setLoading(true)
 
     try {
+      // Enviar apenas os campos aceitos pelo backend (atualmente apenas status)
       const updateData = {
-        status: formData.status,
-        date: formData.date,
-        totalAmount: calculateTotal(),
-        items: formData.items.map(item => ({
-          id: item.id,
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: parseFloat(item.unitPrice),
-          totalPrice: parseFloat(item.totalPrice)
-        }))
+        status: formData.status
       }
 
+      console.log('📤 Enviando dados de atualização:', updateData)
       await onSave(updateData)
       onClose()
     } catch (error) {
-      console.error('Erro ao salvar receita:', error)
+      console.error('❌ Erro ao salvar receita:', error)
       setError('Erro ao salvar receita. Tente novamente.')
     } finally {
       setLoading(false)
@@ -280,7 +250,7 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave }: EditRecei
         {/* Cabeçalho do Modal */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Editar Receita</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Editar Status da Receita</h2>
             <p className="text-gray-600">ID: {receipt.id}</p>
           </div>
           <button
@@ -300,6 +270,15 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave }: EditRecei
               {error}
             </div>
           )}
+
+          {/* Aviso sobre limitações do backend */}
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded">
+            <p className="font-medium">ℹ️ Informação:</p>
+            <p className="text-sm">
+              Atualmente, apenas o <strong>status da receita</strong> pode ser alterado. 
+              A edição de itens, valores e datas será implementada em versões futuras.
+            </p>
+          </div>
 
           {/* Informações do Paciente (Somente Leitura) */}
           <Card className="p-4">
@@ -338,14 +317,18 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave }: EditRecei
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Data *
+                  Data (Somente Leitura)
                 </label>
                 <Input
                   type="date"
                   value={formData.date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                  required
+                  className="bg-gray-50 cursor-not-allowed"
+                  disabled
+                  readOnly
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  A edição de data será implementada em versões futuras
+                </p>
               </div>
             </div>
           </Card>
@@ -353,69 +336,56 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave }: EditRecei
           {/* Itens da Receita */}
           <Card className="p-4">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Itens da Receita</h3>
-              <Button
-                type="button"
-                onClick={addItem}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                Adicionar Item
-              </Button>
+              <h3 className="text-lg font-semibold text-gray-900">Itens da Receita (Somente Leitura)</h3>
+              <div className="text-sm text-gray-500">
+                Edição de itens será implementada em versões futuras
+              </div>
             </div>
 
             <div className="space-y-4">
               {formData.items.map((item, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                   <div className="flex justify-between items-start mb-4">
                     <h4 className="font-medium text-gray-900">Item {index + 1}</h4>
-                    <Button
-                      type="button"
-                      onClick={() => removeItem(index)}
-                      className="bg-red-600 hover:bg-red-700 text-white text-sm px-2 py-1"
-                    >
-                      Remover
-                    </Button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Descrição *
+                        Descrição
                       </label>
                       <Input
                         type="text"
                         value={item.description}
-                        onChange={(e) => updateItem(index, 'description', e.target.value)}
-                        placeholder="Descrição do serviço/produto"
-                        required
+                        className="bg-gray-100 cursor-not-allowed"
+                        disabled
+                        readOnly
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Quantidade *
+                        Quantidade
                       </label>
                       <Input
                         type="number"
-                        min="1"
                         value={item.quantity}
-                        onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                        required
+                        className="bg-gray-100 cursor-not-allowed"
+                        disabled
+                        readOnly
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Preço Unitário *
+                        Preço Unitário
                       </label>
                       <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
+                        type="text"
                         value={item.unitPrice}
-                        onChange={(e) => updateItem(index, 'unitPrice', e.target.value)}
-                        placeholder="0.00"
-                        required
+                        className="bg-gray-100 cursor-not-allowed"
+                        disabled
+                        readOnly
                       />
                     </div>
                   </div>
@@ -454,7 +424,7 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave }: EditRecei
               className="bg-blue-600 hover:bg-blue-700 text-white"
               disabled={loading}
             >
-              {loading ? 'Salvando...' : 'Salvar Alterações'}
+              {loading ? 'Salvando...' : 'Salvar Status'}
             </Button>
           </div>
         </form>
