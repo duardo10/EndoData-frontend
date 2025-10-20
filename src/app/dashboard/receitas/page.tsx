@@ -744,6 +744,256 @@ export default function ReceitasPage() {
   }
 
   /**
+   * Remove receitas selecionadas do sistema.
+   * 
+   * Esta função integra com o endpoint DELETE /receipts/:id do backend
+   * para remover permanentemente as receitas selecionadas. Executa
+   * remoção sequencial com feedback visual e atualiza a lista local.
+   * 
+   * Funcionalidades implementadas:
+   * - Validação de receitas selecionadas
+   * - Confirmação antes da remoção
+   * - Indicador de loading durante o processo
+   * - Remoção sequencial via API
+   * - Atualização automática da lista local
+   * - Limpeza da seleção após sucesso
+   * - Tratamento robusto de erros
+   * 
+   * @async
+   * @function handleRemoveSelected
+   * @description Remove as receitas marcadas como selecionadas
+   * @returns {Promise<void>}
+   */
+  const handleRemoveSelected = async () => {
+    if (selectedReceipts.length === 0) {
+      alert('Selecione pelo menos uma receita para remover.')
+      return
+    }
+
+    // Criar modal de confirmação customizada
+    const receiptWord = selectedReceipts.length === 1 ? 'receita' : 'receitas'
+    
+    const confirmDelete = await new Promise<boolean>((resolve) => {
+      // Criar overlay
+      const overlay = document.createElement('div')
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      `
+
+      // Criar modal
+      const modal = document.createElement('div')
+      modal.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        position: relative;
+      `
+
+      modal.innerHTML = `
+        <div style="font-size: 48px; margin-bottom: 16px;">🗑️</div>
+        <h3 style="margin: 0 0 16px 0; color: #dc2626; font-size: 20px; font-weight: 600;">
+          Confirmar Remoção
+        </h3>
+        <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.5;">
+          Você está prestes a remover <strong>${selectedReceipts.length} ${receiptWord}</strong> permanentemente.
+          <br><br>
+          <span style="color: #dc2626; font-weight: 600;">⚠️ Esta ação NÃO pode ser desfeita!</span>
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button id="cancelBtn" style="
+            padding: 12px 24px;
+            border: 2px solid #d1d5db;
+            background: white;
+            color: #374151;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+          ">
+            Cancelar
+          </button>
+          <button id="confirmBtn" style="
+            padding: 12px 24px;
+            border: 2px solid #dc2626;
+            background: #dc2626;
+            color: white;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+          ">
+            🗑️ Remover ${receiptWord}
+          </button>
+        </div>
+      `
+
+      overlay.appendChild(modal)
+      document.body.appendChild(overlay)
+
+      // Adicionar event listeners
+      const cancelBtn = modal.querySelector('#cancelBtn') as HTMLButtonElement
+      const confirmBtn = modal.querySelector('#confirmBtn') as HTMLButtonElement
+
+      // Efeitos hover
+      cancelBtn.addEventListener('mouseenter', () => {
+        cancelBtn.style.background = '#f3f4f6'
+        cancelBtn.style.borderColor = '#9ca3af'
+      })
+      cancelBtn.addEventListener('mouseleave', () => {
+        cancelBtn.style.background = 'white'
+        cancelBtn.style.borderColor = '#d1d5db'
+      })
+
+      confirmBtn.addEventListener('mouseenter', () => {
+        confirmBtn.style.background = '#b91c1c'
+        confirmBtn.style.borderColor = '#b91c1c'
+      })
+      confirmBtn.addEventListener('mouseleave', () => {
+        confirmBtn.style.background = '#dc2626'
+        confirmBtn.style.borderColor = '#dc2626'
+      })
+
+      // Event listeners para botões
+      cancelBtn.addEventListener('click', () => {
+        document.body.removeChild(overlay)
+        resolve(false)
+      })
+
+      confirmBtn.addEventListener('click', () => {
+        document.body.removeChild(overlay)
+        resolve(true)
+      })
+
+      // Fechar com ESC
+      const handleKeyPress = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          document.body.removeChild(overlay)
+          document.removeEventListener('keydown', handleKeyPress)
+          resolve(false)
+        }
+      }
+      document.addEventListener('keydown', handleKeyPress)
+
+      // Fechar clicando fora
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          document.body.removeChild(overlay)
+          resolve(false)
+        }
+      })
+    })
+
+    if (!confirmDelete) {
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        alert('Token de autenticação não encontrado.')
+        return
+      }
+
+      // Mostrar indicador de loading
+      const loadingAlert = document.createElement('div')
+      loadingAlert.innerHTML = `
+        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                    background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 1000; display: flex; align-items: center; gap: 10px;">
+          <div style="width: 20px; height: 20px; border: 2px solid #e5e7eb; border-top: 2px solid #ef4444; 
+                      border-radius: 50%; animation: spin 1s linear infinite;"></div>
+          <span>Removendo ${selectedReceipts.length} receita${selectedReceipts.length > 1 ? 's' : ''}...</span>
+        </div>
+        <style>
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        </style>
+      `
+      document.body.appendChild(loadingAlert)
+
+      // Remover receitas sequencialmente
+      let removedCount = 0
+      let errorCount = 0
+
+      for (const receiptId of selectedReceipts) {
+        try {
+          const response = await fetch(`http://localhost:4000/api/receipts/${receiptId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          })
+
+          if (response.ok) {
+            removedCount++
+          } else {
+            console.error(`Erro ao remover receita ${receiptId}:`, response.status)
+            errorCount++
+          }
+        } catch (error) {
+          console.error(`Erro ao remover receita ${receiptId}:`, error)
+          errorCount++
+        }
+      }
+
+      // Remove indicador de loading
+      document.body.removeChild(loadingAlert)
+
+      // Atualizar lista local removendo as receitas deletadas
+      if (removedCount > 0) {
+        // Limpar seleção imediatamente
+        setSelectedReceipts([])
+        
+        // Forçar atualização da lista via backend
+        try {
+          await refreshReceipts()
+          console.log('✅ Lista atualizada após remoção')
+        } catch (error) {
+          console.error('❌ Erro ao atualizar lista após remoção:', error)
+        }
+      }
+
+      // Mostrar resultado
+      if (errorCount === 0) {
+        alert(`${removedCount} receita${removedCount > 1 ? 's removidas' : ' removida'} com sucesso!`)
+      } else if (removedCount > 0) {
+        alert(`${removedCount} receita${removedCount > 1 ? 's removidas' : ' removida'} com sucesso.\n${errorCount} receita${errorCount > 1 ? 's' : ''} não ${errorCount > 1 ? 'puderam' : 'pôde'} ser removida${errorCount > 1 ? 's' : ''}.`)
+      } else {
+        alert('Nenhuma receita pôde ser removida. Verifique se você tem permissão.')
+      }
+
+    } catch (error) {
+      // Remove indicador de carregamento em caso de erro
+      const loadingAlert = document.querySelector('div[style*="position: fixed"]')
+      if (loadingAlert) {
+        document.body.removeChild(loadingAlert)
+      }
+      
+      console.error('Erro ao remover receitas:', error)
+      alert('Erro ao remover receitas. Tente novamente.')
+    }
+  }
+
+  /**
    * Abre o modal de visualização de receita.
    * 
    * Define a receita selecionada e abre o modal de visualização
@@ -1315,22 +1565,7 @@ export default function ReceitasPage() {
                 
                 <Button 
                   className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  onClick={() => {
-                    if (selectedReceipts.length === 0) {
-                      alert('Selecione pelo menos uma receita para remover.')
-                      return
-                    }
-                    
-                    const confirmDelete = confirm(
-                      `Tem certeza que deseja remover ${selectedReceipts.length} receita${selectedReceipts.length > 1 ? 's' : ''}?`
-                    )
-                    
-                    if (confirmDelete) {
-                      // Aqui você pode implementar a lógica de remoção
-                      console.log('Removendo receitas:', selectedReceipts)
-                      alert(`Funcionalidade de remoção em desenvolvimento. IDs selecionados: ${selectedReceipts.join(', ')}`)
-                    }
-                  }}
+                  onClick={handleRemoveSelected}
                   disabled={selectedReceipts.length === 0}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
