@@ -70,4 +70,26 @@ export class PatientService {
     const response = await api.get(`/patients/${id}`)
     return response.data
   }
+
+  /**
+   * Cria um novo paciente
+   * @param data - Payload do paciente
+   */
+  static async createPatient(data: Partial<Patient>): Promise<Patient> {
+    const response = await api.post('/patients', data)
+    return response.data
+  }
+
+  /**
+   * Atualiza um paciente existente (atualização parcial).
+   * Utiliza método HTTP PATCH para aplicar apenas os campos fornecidos.
+   * @param id - ID do paciente
+   * @param data - Campos a atualizar (parciais)
+   * @returns Promise<Patient> - paciente atualizado
+   * @throws Erro de rede ou validação propagado pelo Axios
+   */
+  static async updatePatient(id: string, data: Partial<Patient>): Promise<Patient> {
+    const response = await api.patch(`/patients/${id}`, data)
+    return response.data
+  }
 }

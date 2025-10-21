@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   Save, 
   UserPlus, 
@@ -117,7 +117,14 @@ const initialHistory: PatientHistoryEntry[] = []
  * @author EndoData Team
  * @since 1.0.0
  */
-export function PatientDetailsForm(): React.ReactElement {
+import { PatientService, Patient } from '@/services/patientService'
+import { getCurrentUserId } from '@/lib/jwt-utils'
+
+interface Props {
+  patientId?: string
+}
+
+export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>(initialPersonalInfo)
   const [medicalInfo, setMedicalInfo] = useState<MedicalInfo>(initialMedicalInfo)
   const [medications, setMedications] = useState<Medication[]>(initialMedications)
@@ -125,6 +132,50 @@ export function PatientDetailsForm(): React.ReactElement {
   const [newMedication, setNewMedication] = useState({ nome: '', dosagem: '' })
   const [newHistoryEntry, setNewHistoryEntry] = useState({ data: '', descricao: '' })
   const [showHistoryForm, setShowHistoryForm] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Carrega paciente quando um patientId for fornecido
+  useEffect(() => {
+    if (!patientId) return
+    let mounted = true
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const data = await PatientService.getPatientById(patientId)
+        if (!mounted) return
+        // Mapear campos básicos que existam
+        setPersonalInfo({
+          nomeCompleto: (data as any).name || '',
+          dataNascimento: (data as any).birthDate || '',
+          cpf: (data as any).cpf || '',
+          telefone: (data as any).phone || '',
+          email: (data as any).email || '',
+          bairro: '',
+          cidade: '',
+          estado: '',
+          sexo: (data as any).gender || ''
+        })
+        // dados médicos simples (se existirem)
+        setMedicalInfo({
+          tipoSanguineo: '',
+          alergias: '',
+          condicoesPreExistentes: ''
+        })
+        // medicamentos e histórico podem vir do backend em arrays
+        setMedications((data as any).medications || [])
+        setHistory((data as any).history || [])
+      } catch (err: any) {
+        setError(err?.message || 'Erro ao carregar paciente')
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+    return () => { mounted = false }
+  }, [patientId])
 
   /**
    * Adiciona um novo medicamento à lista
@@ -178,18 +229,89 @@ export function PatientDetailsForm(): React.ReactElement {
    * Salva as informações do paciente
    */
   const savePatientInfo = (): void => {
-    // TODO: Implementar lógica de salvamento
-    console.log('Salvando informações do paciente:', { personalInfo, medicalInfo, medications, history })
-    alert('Informações do paciente salvas com sucesso!')
+    ;(async () => {
+      setSaving(true)
+      setError(null)
+      try {
+        // Validações mínimas
+        if (!personalInfo.nomeCompleto || !personalInfo.cpf || !personalInfo.dataNascimento || !personalInfo.sexo) {
+          throw new Error('Preencha os campos obrigatórios: nome, CPF, data de nascimento e sexo.')
+        }
+
+        const userId = getCurrentUserId()
+        if (!userId) {
+          throw new Error('Usuário não autenticado')
+        }
+
+        const payload: any = {
+          name: personalInfo.nomeCompleto,
+          cpf: personalInfo.cpf,
+          email: personalInfo.email || undefined,
+          phone: personalInfo.telefone || undefined,
+          birthDate: personalInfo.dataNascimento,
+          gender: personalInfo.sexo,
+          neighborhood: personalInfo.bairro || undefined,
+          city: personalInfo.cidade || undefined,
+          state: personalInfo.estado || undefined,
+          medicalHistory: medicalInfo.condicoesPreExistentes || undefined,
+          allergies: medicalInfo.alergias || undefined,
+          userId,
+        }
+
+        if (patientId) {
+          await PatientService.updatePatient(patientId, payload)
+          alert('Informações do paciente atualizadas com sucesso!')
+        } else {
+          await PatientService.createPatient(payload)
+          alert('Paciente criado com sucesso!')
+        }
+      } catch (err: any) {
+        console.error(err)
+        setError(err?.response?.data?.message || err?.message || 'Erro ao salvar')
+      } finally {
+        setSaving(false)
+      }
+    })()
   }
 
   /**
    * Salva como novo paciente
    */
   const saveAsNewPatient = (): void => {
-    // TODO: Implementar lógica de salvamento como novo paciente
-    console.log('Salvando como novo paciente:', { personalInfo, medicalInfo, medications, history })
-    alert('Novo paciente cadastrado com sucesso!')
+    ;(async () => {
+      setSaving(true)
+      setError(null)
+      try {
+        const userId = getCurrentUserId()
+        if (!userId) {
+          setError('Usuário não autenticado')
+          setSaving(false)
+          return
+        }
+
+        const payload: any = {
+          name: personalInfo.nomeCompleto,
+          cpf: personalInfo.cpf,
+          email: personalInfo.email || undefined,
+          phone: personalInfo.telefone || undefined,
+          birthDate: personalInfo.dataNascimento,
+          gender: personalInfo.sexo,
+          neighborhood: personalInfo.bairro || undefined,
+          city: personalInfo.cidade || undefined,
+          state: personalInfo.estado || undefined,
+          medicalHistory: medicalInfo.condicoesPreExistentes || undefined,
+          allergies: medicalInfo.alergias || undefined,
+          userId,
+        }
+        await PatientService.createPatient(payload)
+        alert('Novo paciente cadastrado com sucesso!')
+      } catch (err: any) {
+        console.error(err)
+        setError(err?.response?.data?.message || err?.message || 'Erro ao criar paciente')
+      } finally {
+        setSaving(false)
+      }
+    })()
   }
 
   return (
@@ -532,13 +654,14 @@ export function PatientDetailsForm(): React.ReactElement {
 
       {/* Botões de ação */}
       <div className="flex justify-center gap-4 pt-6">
-        <Button
-          onClick={savePatientInfo}
-          className="bg-[#2074E9] hover:bg-[#1a5bb8] text-white px-8 py-3"
-        >
-          <Save className="w-5 h-5 mr-2" />
-          Salvar Informações do Paciente
-        </Button>
+          <Button
+            onClick={savePatientInfo}
+            className="bg-[#2074E9] hover:bg-[#1a5bb8] text-white px-8 py-3"
+            disabled={saving}
+          >
+            <Save className="w-5 h-5 mr-2" />
+            {saving ? 'Salvando...' : 'Salvar Informações do Paciente'}
+          </Button>
         
         <Button
           onClick={saveAsNewPatient}
@@ -548,6 +671,9 @@ export function PatientDetailsForm(): React.ReactElement {
           Salvar como Novo Paciente
         </Button>
       </div>
+      {error && (
+        <div className="text-red-600 text-center mt-2">{error}</div>
+      )}
     </div>
   )
 }
