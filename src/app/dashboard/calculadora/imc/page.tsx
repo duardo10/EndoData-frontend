@@ -46,7 +46,7 @@ export default function CalculadoraIMC(): React.ReactElement {
       }
       
       // IMC
-      const resIMC = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/calculations/imc`, {
+      const resIMC = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/calculations/imc`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -60,7 +60,7 @@ export default function CalculadoraIMC(): React.ReactElement {
       if (!resIMC.ok) throw new Error('Erro ao calcular IMC.')
       const imcData = await resIMC.json()
       // BMR
-      const resBMR = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/calculations/bmr`, {
+      const resBMR = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/calculations/bmr`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

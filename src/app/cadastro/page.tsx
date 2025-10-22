@@ -147,6 +147,7 @@ export default function CadastroPage() {
   const router = useRouter()
   
   const [formData, setFormData] = useState<RegisterData>({
+    nome: '',
     cpf: '',
     email: '',
     crm: '',
@@ -242,6 +243,7 @@ export default function CadastroPage() {
         
         // Limpa formulário
         setFormData({
+          nome: '',
           cpf: '',
           email: '',
           crm: '',
@@ -249,9 +251,9 @@ export default function CadastroPage() {
           confirmarSenha: ''
         })
         
-        // Redireciona para dashboard após 2 segundos
+        // Redireciona para login após 2 segundos
         setTimeout(() => {
-          router.push('/dashboard')
+          router.push('/')
         }, 2000)
         
       } else {
@@ -280,11 +282,15 @@ export default function CadastroPage() {
           <span className="text-xl font-bold text-blue-600">EndoData</span>
         </div>
         
-        {/* Ícone de logout no canto direito */}
-        <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200 p-1">
+        {/* Botão de voltar para login */}
+        <button 
+          onClick={() => router.push('/')}
+          className="text-gray-500 hover:text-gray-700 transition-colors duration-200 p-1 flex items-center space-x-1"
+        >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
+          <span className="text-sm">Voltar</span>
         </button>
       </div>
 
@@ -336,6 +342,23 @@ export default function CadastroPage() {
         {/* Formulário */}
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
+            {/* Nome */}
+            <div className="textbox">
+              <Label htmlFor="nome" className="label block text-sm font-medium text-gray-700 mb-1">
+                Nome Completo
+              </Label>
+              <Input
+                id="nome"
+                name="nome"
+                type="text"
+                placeholder="Seu nome completo"
+                value={formData.nome}
+                onChange={(e) => handleInputChange('nome', e.target.value)}
+                className="textbox-input w-full h-[45px] px-3 font-[Open_Sans] text-sm font-normal bg-white rounded-md border border-[#DEE1E6] outline-none transition-colors hover:border-[#DEE1E6] focus:border-[#DEE1E6] focus:ring-0 disabled:text-[#565D6D] disabled:bg-white disabled:border-[#DEE1E6]"
+                required
+              />
+            </div>
+
             {/* CPF */}
             <div className="textbox">
               <Label htmlFor="cpf" className="label block text-sm font-medium text-gray-700 mb-1">
@@ -443,6 +466,20 @@ export default function CadastroPage() {
             </Button>
           </div>
         </form>
+
+        {/* Link para voltar ao login */}
+        <div className="text-center mt-6">
+          <span className="text-sm text-gray-600">
+            Já tem uma conta?{' '}
+          </span>
+          <button 
+            type="button"
+            onClick={() => router.push('/')}
+            className="text-sm text-blue-600 hover:underline transition-all"
+          >
+            Fazer login
+          </button>
+        </div>
         </div>
       </div>
     </div>
