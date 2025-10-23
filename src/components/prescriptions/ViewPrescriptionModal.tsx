@@ -1,5 +1,13 @@
 'use client'
 
+/**
+ * @fileoverview Modal de visualização de prescrição.
+ *
+ * Atualizações recentes:
+ * - Botões de fechar/fechar modal com efeito de hover (sombra) e estilização consistente para melhor feedback visual.
+ * - Sem mudanças funcionais em dados; apenas UI/UX.
+ */
+
 import { X, FileText, Calendar, User, Pill } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'

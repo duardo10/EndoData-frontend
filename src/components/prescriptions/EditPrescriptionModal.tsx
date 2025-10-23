@@ -7,6 +7,14 @@
 
 'use client'
 
+/**
+ * @fileoverview Modal de edição de prescrição.
+ *
+ * Atualizações recentes:
+ * - Botões "Fechar" e "Cancelar" com realce visual (hover com sombra) e cor vermelha padronizada para ações de saída.
+ * - Sem alterações de lógica; mantém edição apenas do status.
+ */
+
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { PrescriptionStatus, PrescriptionStatusDisplayMap } from '@/types/prescription'

@@ -7,6 +7,12 @@
  * 
  * @author EndoData Team
  * @since 1.0.0
+ * 
+ * Atualizações recentes:
+ * - Adicionado campo para definir o Status da Prescrição (Rascunho, Ativa, Suspensa, Concluída).
+ * - Adotado o mesmo modelo do modal: lista de medicamentos (nome, dosagem, frequência, duração).
+ * - Frequência e Duração agora usam selects com opções fixas (padronização com o modal).
+ * - Removido campo de "instruções" separado em favor da "duração" por medicamento.
  */
 
 'use client'
@@ -20,6 +26,7 @@ import { useState, useEffect } from 'react'
 
 // Componentes UI
 import { Button } from '@/components/ui/button'
+import { Plus, Trash2 } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 
 // Services e utilitários
@@ -28,7 +35,7 @@ import { PatientService } from '@/services/patientService'
 import { getCurrentUserId } from '@/lib/jwt-utils'
 
 // Tipos e interfaces
-import { CreatePrescriptionInput, PrescriptionStatus } from '@/types/prescription'
+import { CreatePrescriptionInput, PrescriptionStatus, PrescriptionStatusDisplayMap, CreatePrescriptionMedicationInput } from '@/types/prescription'
 import { Patient } from '@/services/patientService'
 
 // =====================================
@@ -72,11 +79,12 @@ export default function PrescricaoPage() {
   const [isSearchingPatients, setIsSearchingPatients] = useState(false)
   
   // Estados dos campos de medicação e prescrição
-  const [medicationName, setMedicationName] = useState('')
-  const [dosage, setDosage] = useState('')
-  const [frequency, setFrequency] = useState('')
-  const [instructions, setInstructions] = useState('')
+  // Adota o mesmo modelo do modal: lista de medicamentos com nome, dosagem, frequência e duração
+  const [medications, setMedications] = useState<CreatePrescriptionMedicationInput[]>([
+    { medicationName: '', dosage: '', frequency: '', duration: '' }
+  ])
   const [observations, setObservations] = useState('')
+  const [prescriptionStatus, setPrescriptionStatus] = useState<PrescriptionStatus>(PrescriptionStatus.ACTIVE)
   
   // Estados de controle da interface
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -158,15 +166,34 @@ export default function PrescricaoPage() {
       setPatientSearch('')
       setPatientSearchResults([])
       setShowPatientDropdown(false)
-      setMedicationName('')
-      setDosage('')
-      setFrequency('')
-      setInstructions('')
+      setMedications([{ medicationName: '', dosage: '', frequency: '', duration: '' }])
       setObservations('')
       setMessage(null)
     } catch (error) {
       console.error('Erro ao resetar formulário:', error)
     }
+  }
+
+  /** Adiciona um novo bloco de medicamento (igual ao modal de criação). */
+  const addMedication = () => {
+    setMedications((prev) => ([...prev, { medicationName: '', dosage: '', frequency: '', duration: '' }]))
+  }
+
+  /** Remove um medicamento pelo índice, mantendo ao menos um item. */
+  const removeMedication = (index: number) => {
+    setMedications((prev) => {
+      if (prev.length <= 1) return prev
+      return prev.filter((_, i) => i !== index)
+    })
+  }
+
+  /** Atualiza um campo de um medicamento específico. */
+  const updateMedication = (index: number, field: keyof CreatePrescriptionMedicationInput, value: string) => {
+    setMedications((prev) => {
+      const next = [...prev]
+      next[index] = { ...next[index], [field]: value }
+      return next
+    })
   }
 
   /**
@@ -264,18 +291,10 @@ export default function PrescricaoPage() {
       return
     }
 
-    if (!medicationName.trim()) {
-      setMessage({type: 'error', text: 'Informe o nome do medicamento'})
-      return
-    }
-
-    if (!dosage.trim()) {
-      setMessage({type: 'error', text: 'Informe a dosagem'})
-      return
-    }
-
-    if (!frequency.trim()) {
-      setMessage({type: 'error', text: 'Selecione a frequência'})
+    // Validar medicamentos (mesma regra do modal)
+    const validMedications = medications.filter(m => m.medicationName.trim() && m.dosage.trim() && m.frequency.trim())
+    if (validMedications.length === 0) {
+      setMessage({ type: 'error', text: 'Adicione pelo menos um medicamento válido (nome, dosagem e frequência são obrigatórios).' })
       return
     }
 
@@ -300,14 +319,9 @@ export default function PrescricaoPage() {
       const prescriptionData: CreatePrescriptionInput = {
         patientId: selectedPatient.id,
         userId,
-        status: PrescriptionStatus.ACTIVE,
+        status: prescriptionStatus,
         notes: observations.trim() || undefined,
-        medications: [{
-          medicationName: medicationName.trim(),
-          dosage: dosage.trim(),
-          frequency: frequency,
-          duration: instructions.trim()
-        }]
+        medications: validMedications
       }
 
       await PrescriptionService.createPrescription(prescriptionData)
@@ -464,103 +478,117 @@ export default function PrescricaoPage() {
               )}
             </div>
 
-            {/* Medicamento */}
+            {/* Status da Prescrição */}
             <div>
-              <label htmlFor="medication" className="block text-sm font-medium text-gray-700 mb-2">
-                Medicamento *
-              </label>
-              <input
-                type="text"
-                id="medication"
-                value={medicationName}
-                onChange={(e) => {
-                  try {
-                    setMedicationName(e.target.value || '')
-                  } catch (error) {
-                    console.error('Erro ao atualizar medicamento:', error)
-                  }
-                }}
-                placeholder="Nome do medicamento"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-
-            {/* Dosagem */}
-            <div>
-              <label htmlFor="dosage" className="block text-sm font-medium text-gray-700 mb-2">
-                Dosagem *
-              </label>
-              <input
-                type="text"
-                id="dosage"
-                value={dosage}
-                onChange={(e) => {
-                  try {
-                    setDosage(e.target.value || '')
-                  } catch (error) {
-                    console.error('Erro ao atualizar dosagem:', error)
-                  }
-                }}
-                placeholder="Ex: 500mg, 1 comprimido"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-
-            {/* Frequência */}
-            <div>
-              <label htmlFor="frequency" className="block text-sm font-medium text-gray-700 mb-2">
-                Frequência *
+              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+                Status da Prescrição *
               </label>
               <select
-                id="frequency"
-                value={frequency}
+                id="status"
+                value={prescriptionStatus}
                 onChange={(e) => {
                   try {
-                    setFrequency(e.target.value || '')
+                    setPrescriptionStatus(e.target.value as PrescriptionStatus)
                   } catch (error) {
-                    console.error('Erro ao atualizar frequência:', error)
+                    console.error('Erro ao atualizar status:', error)
                   }
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
-                <option value="">Selecione a frequência</option>
-                <option value="1x ao dia">1x ao dia</option>
-                <option value="2x ao dia">2x ao dia</option>
-                <option value="3x ao dia">3x ao dia</option>
-                <option value="4x ao dia">4x ao dia</option>
-                <option value="6x ao dia">6x ao dia</option>
-                <option value="8x ao dia">8x ao dia</option>
-                <option value="12x ao dia">12x ao dia</option>
-                <option value="A cada 4 horas">A cada 4 horas</option>
-                <option value="A cada 6 horas">A cada 6 horas</option>
-                <option value="A cada 8 horas">A cada 8 horas</option>
-                <option value="A cada 12 horas">A cada 12 horas</option>
-                <option value="Quando necessário">Quando necessário</option>
+                <option value={PrescriptionStatus.DRAFT}>{PrescriptionStatusDisplayMap[PrescriptionStatus.DRAFT]}</option>
+                <option value={PrescriptionStatus.ACTIVE}>{PrescriptionStatusDisplayMap[PrescriptionStatus.ACTIVE]}</option>
+                <option value={PrescriptionStatus.SUSPENDED}>{PrescriptionStatusDisplayMap[PrescriptionStatus.SUSPENDED]}</option>
+                <option value={PrescriptionStatus.COMPLETED}>{PrescriptionStatusDisplayMap[PrescriptionStatus.COMPLETED]}</option>
               </select>
             </div>
 
-            {/* Instruções */}
-            <div>
-              <label htmlFor="instructions" className="block text-sm font-medium text-gray-700 mb-2">
-                Instruções de uso
-              </label>
-              <textarea
-                id="instructions"
-                value={instructions}
-                onChange={(e) => {
-                  try {
-                    setInstructions(e.target.value || '')
-                  } catch (error) {
-                    console.error('Erro ao atualizar instruções:', error)
-                  }
-                }}
-                placeholder="Como usar o medicamento (duração, horários, etc.)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={3}
-              />
+            {/* Medicamentos - mesmo modelo do modal */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">Medicamentos *</label>
+                <Button type="button" variant="outline" size="sm" onClick={addMedication} disabled={isSubmitting}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Medicamento
+                </Button>
+              </div>
+
+              {medications.map((med, index) => (
+                <div key={index} className="p-4 border rounded-lg space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Medicamento {index + 1}</h4>
+                    {medications.length > 1 && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removeMedication(index)} disabled={isSubmitting}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Nome do Medicamento *</label>
+                      <input
+                        value={med.medicationName}
+                        onChange={(e) => updateMedication(index, 'medicationName', e.target.value)}
+                        placeholder="Ex: Paracetamol"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Dosagem *</label>
+                      <input
+                        value={med.dosage}
+                        onChange={(e) => updateMedication(index, 'dosage', e.target.value)}
+                        placeholder="Ex: 500mg"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Frequência *</label>
+                      <select
+                        value={med.frequency}
+                        onChange={(e) => updateMedication(index, 'frequency', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      >
+                        <option value="">Selecione a frequência</option>
+                        <option value="1x ao dia">1x ao dia</option>
+                        <option value="2x ao dia">2x ao dia</option>
+                        <option value="3x ao dia">3x ao dia</option>
+                        <option value="4x ao dia">4x ao dia</option>
+                        <option value="6x ao dia">6x ao dia</option>
+                        <option value="8x ao dia">8x ao dia</option>
+                        <option value="12x ao dia">12x ao dia</option>
+                        <option value="A cada 4 horas">A cada 4 horas</option>
+                        <option value="A cada 6 horas">A cada 6 horas</option>
+                        <option value="A cada 8 horas">A cada 8 horas</option>
+                        <option value="A cada 12 horas">A cada 12 horas</option>
+                        <option value="Quando necessário">Quando necessário</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Duração</label>
+                      <select
+                        value={med.duration}
+                        onChange={(e) => updateMedication(index, 'duration', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">Selecione a duração (opcional)</option>
+                        <option value="2 dias">2 dias</option>
+                        <option value="3 dias">3 dias</option>
+                        <option value="5 dias">5 dias</option>
+                        <option value="7 dias">7 dias</option>
+                        <option value="10 dias">10 dias</option>
+                        <option value="14 dias">14 dias</option>
+                        <option value="30 dias">30 dias</option>
+                        <option value="60 dias">60 dias</option>
+                        <option value="90 dias">90 dias</option>
+                        <option value="Enquanto necessário">Enquanto necessário</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Observações */}

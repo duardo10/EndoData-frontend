@@ -1,5 +1,14 @@
 'use client'
 
+/**
+ * @fileoverview Modal de criação de prescrições.
+ *
+ * Atualizações recentes:
+ * - Campo Paciente agora usa busca com autocomplete (nome/CPF) com debounce de 300ms.
+ * - Frequência e Duração de cada medicamento agora são selects com opções fixas (padronização com a página de Prescrição).
+ * - Reset do estado de busca ao fechar/salvar para evitar valores residuais.
+ */
+
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,15 +19,29 @@ import { CreatePrescriptionInput, PrescriptionStatus, CreatePrescriptionMedicati
 import { PrescriptionService } from '@/services/prescriptionService'
 import { getCurrentUserId } from '@/lib/jwt-utils'
 
+/**
+ * Propriedades do Modal de Criação de Prescrição
+ */
 interface CreatePrescriptionModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
 }
 
+/**
+ * Modal para criar uma nova prescrição.
+ * - Permite buscar/selecionar paciente via autocomplete
+ * - Adiciona um ou mais medicamentos
+ * - Define status e observações
+ */
 export default function CreatePrescriptionModal({ isOpen, onClose, onSuccess }: CreatePrescriptionModalProps) {
   const [patients, setPatients] = useState<Patient[]>([])
   const [selectedPatientId, setSelectedPatientId] = useState<string>('')
+  // Estados de busca de paciente
+  const [patientSearch, setPatientSearch] = useState('')
+  const [patientSearchResults, setPatientSearchResults] = useState<Patient[]>([])
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false)
+  const [isSearchingPatients, setIsSearchingPatients] = useState(false)
   const [status, setStatus] = useState<PrescriptionStatus>(PrescriptionStatus.ACTIVE)
   const [notes, setNotes] = useState('')
   const [medications, setMedications] = useState<CreatePrescriptionMedicationInput[]>([
@@ -39,6 +62,9 @@ export default function CreatePrescriptionModal({ isOpen, onClose, onSuccess }: 
     }
   }, [isOpen])
 
+  /**
+   * Carrega a listagem básica de pacientes (fallback inicial)
+   */
   const loadPatients = async () => {
     try {
       setIsLoadingPatients(true)
@@ -49,6 +75,47 @@ export default function CreatePrescriptionModal({ isOpen, onClose, onSuccess }: 
     } finally {
       setIsLoadingPatients(false)
     }
+  }
+
+  /**
+   * Busca de pacientes com debounce (300ms) via PatientService.searchPatients
+   * - Ativa quando o modal está aberto e existem ao menos 2 caracteres
+   * - Exibe dropdown com resultados e indicador de carregamento
+   */
+  useEffect(() => {
+    if (!isOpen) return
+    if (patientSearch.length < 2) {
+      setPatientSearchResults([])
+      setShowPatientDropdown(false)
+      return
+    }
+    const timeoutId = setTimeout(async () => {
+      try {
+        setIsSearchingPatients(true)
+        const response = await PatientService.searchPatients(patientSearch)
+        const patients = response?.patients || []
+        setPatientSearchResults(patients)
+        setShowPatientDropdown(patients.length > 0)
+      } catch (error) {
+        console.error('Erro ao buscar pacientes:', error)
+        setPatientSearchResults([])
+        setShowPatientDropdown(false)
+      } finally {
+        setIsSearchingPatients(false)
+      }
+    }, 300)
+    return () => clearTimeout(timeoutId)
+  }, [patientSearch, isOpen])
+
+  /**
+   * Seleciona um paciente a partir dos resultados da busca.
+   * @param patient Paciente selecionado
+   */
+  const handleSelectPatientFromSearch = (patient: Patient) => {
+    setSelectedPatientId(patient.id)
+    setPatientSearch(patient.name || '')
+    setShowPatientDropdown(false)
+    setPatientSearchResults([])
   }
 
   const addMedication = () => {
@@ -119,6 +186,9 @@ export default function CreatePrescriptionModal({ isOpen, onClose, onSuccess }: 
       
       // Resetar formulário
       setSelectedPatientId('')
+      setPatientSearch('')
+      setPatientSearchResults([])
+      setShowPatientDropdown(false)
       setStatus(PrescriptionStatus.ACTIVE)
       setNotes('')
       setMedications([{
@@ -141,6 +211,9 @@ export default function CreatePrescriptionModal({ isOpen, onClose, onSuccess }: 
   const handleClose = () => {
     if (!isLoading) {
       setSelectedPatientId('')
+      setPatientSearch('')
+      setPatientSearchResults([])
+      setShowPatientDropdown(false)
       setStatus(PrescriptionStatus.ACTIVE)
       setNotes('')
       setMedications([{
@@ -179,24 +252,50 @@ export default function CreatePrescriptionModal({ isOpen, onClose, onSuccess }: 
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Seleção de Paciente */}
-          <div className="space-y-2">
+          {/* Seleção de Paciente (Busca com autocomplete) */}
+          <div className="relative space-y-2">
             <Label htmlFor="patient">Paciente *</Label>
-            <select 
-              value={selectedPatientId} 
-              onChange={(e) => setSelectedPatientId(e.target.value)}
-              disabled={isLoadingPatients || isLoading}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">
-                {isLoadingPatients ? "Carregando pacientes..." : "Selecione um paciente"}
-              </option>
-              {patients.map((patient) => (
-                <option key={patient.id} value={patient.id}>
-                  {patient.name} - {patient.cpf}
-                </option>
-              ))}
-            </select>
+            <Input
+              id="patient"
+              type="text"
+              value={patientSearch}
+              onChange={(e) => setPatientSearch(e.target.value)}
+              placeholder="Busque por nome ou CPF..."
+              disabled={isLoading}
+            />
+            {isSearchingPatients && (
+              <div className="absolute right-3 top-10 text-gray-400 text-sm">Buscando...</div>
+            )}
+            {showPatientDropdown && patientSearchResults.length > 0 && (
+              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                <ul>
+                  {patientSearchResults.map((patient) => (
+                    <li
+                      key={patient.id}
+                      onClick={() => handleSelectPatientFromSearch(patient)}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                    >
+                      <div className="font-medium">{patient.name || 'Nome não disponível'}</div>
+                      <div className="text-sm text-gray-500">CPF: {patient.cpf || 'N/A'}</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {selectedPatientId && (
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-between">
+                <div className="text-sm text-blue-800">Paciente selecionado</div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setSelectedPatientId(''); setPatientSearch(''); setShowPatientDropdown(false); }}
+                  disabled={isLoading}
+                >
+                  Remover
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Status */}
@@ -283,24 +382,53 @@ export default function CreatePrescriptionModal({ isOpen, onClose, onSuccess }: 
                     />
                   </div>
 
+                  {/* Frequência com opções fixas (padronização) */}
                   <div className="space-y-2">
                     <Label>Frequência *</Label>
-                    <Input
+                    <select 
                       value={medication.frequency}
                       onChange={(e) => updateMedication(index, 'frequency', e.target.value)}
-                      placeholder="Ex: 8/8h"
                       disabled={isLoading}
-                    />
+                      required
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">Selecione a frequência</option>
+                      <option value="1x ao dia">1x ao dia</option>
+                      <option value="2x ao dia">2x ao dia</option>
+                      <option value="3x ao dia">3x ao dia</option>
+                      <option value="4x ao dia">4x ao dia</option>
+                      <option value="6x ao dia">6x ao dia</option>
+                      <option value="8x ao dia">8x ao dia</option>
+                      <option value="12x ao dia">12x ao dia</option>
+                      <option value="A cada 4 horas">A cada 4 horas</option>
+                      <option value="A cada 6 horas">A cada 6 horas</option>
+                      <option value="A cada 8 horas">A cada 8 horas</option>
+                      <option value="A cada 12 horas">A cada 12 horas</option>
+                      <option value="Quando necessário">Quando necessário</option>
+                    </select>
                   </div>
 
+                  {/* Duração com opções fixas (opcional) */}
                   <div className="space-y-2">
                     <Label>Duração</Label>
-                    <Input
+                    <select 
                       value={medication.duration}
                       onChange={(e) => updateMedication(index, 'duration', e.target.value)}
-                      placeholder="Ex: 7 dias"
                       disabled={isLoading}
-                    />
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">Selecione a duração (opcional)</option>
+                      <option value="2 dias">2 dias</option>
+                      <option value="3 dias">3 dias</option>
+                      <option value="5 dias">5 dias</option>
+                      <option value="7 dias">7 dias</option>
+                      <option value="10 dias">10 dias</option>
+                      <option value="14 dias">14 dias</option>
+                      <option value="30 dias">30 dias</option>
+                      <option value="60 dias">60 dias</option>
+                      <option value="90 dias">90 dias</option>
+                      <option value="Enquanto necessário">Enquanto necessário</option>
+                    </select>
                   </div>
                 </div>
               </div>
