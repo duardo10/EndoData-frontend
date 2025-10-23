@@ -12,6 +12,8 @@ import { Card } from '@/components/ui/card'
 interface WelcomeSectionProps {
   userName: string
   userAvatar?: string
+  userSpecialty?: string
+  userCrm?: string
 }
 
 /**
@@ -36,7 +38,7 @@ interface WelcomeSectionProps {
  * @author EndoData Team
  * @since 1.0.0
  */
-export function WelcomeSection({ userName, userAvatar }: WelcomeSectionProps): React.ReactElement {
+export function WelcomeSection({ userName, userAvatar, userSpecialty, userCrm }: WelcomeSectionProps): React.ReactElement {
   // Extrair iniciais do nome para fallback do avatar
   const getInitials = (name: string): string => {
     return name
@@ -74,6 +76,20 @@ export function WelcomeSection({ userName, userAvatar }: WelcomeSectionProps): R
               <h1 className="text-2xl font-bold text-gray-800 mb-1">
                 Olá, {userName}!
               </h1>
+              {(userSpecialty || userCrm) && (
+                <div className="flex items-center gap-2 mb-2">
+                  {userSpecialty && (
+                    <span className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
+                      {userSpecialty}
+                    </span>
+                  )}
+                  {userCrm && (
+                    <span className="text-sm text-gray-500">
+                      CRM: {userCrm}
+                    </span>
+                  )}
+                </div>
+              )}
               <p className="text-gray-600 text-sm leading-relaxed max-w-2xl">
                 Bem-vindo(a) ao seu painel de controle. Acesse rapidamente as funcionalidades essenciais e 
                 mantenha-se atualizado(a) com as informações dos seus pacientes.
