@@ -48,8 +48,8 @@ const menuItems = [
   },
   {
     icon: FileText,
-    label: 'Prescrição',
-    href: '/dashboard/prescricao',
+    label: 'Prescrições',
+    href: '/dashboard/prescricoes',
   },
   {
     icon: Receipt,

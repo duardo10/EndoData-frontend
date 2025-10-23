@@ -44,7 +44,7 @@ export function Header(): React.ReactElement {
     const navItems = [
       { href: "/", icon: Home, label: "Início" },
       { href: "/pacientes", icon: Users, label: "Pacientes" },
-      { href: "/prescricao", icon: Pill, label: "Prescrição" },
+      { href: "/prescricoes", icon: Pill, label: "Prescrições" },
       { href: "/relatorios", icon: FileText, label: "Relatórios" },
       { href: "/configuracoes", icon: Settings, label: "Configurações" },
       { href: "/ajuda", icon: HelpCircle, label: "Teste" },
