@@ -243,13 +243,29 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
           throw new Error('Usuário não autenticado')
         }
 
+        // Mapear gênero para os valores esperados pelo backend
+        const mapGender = (gender: string): string => {
+          const genderMap: { [key: string]: string } = {
+            'Masculino': 'male',
+            'Feminino': 'female',
+            'Outro': 'other',
+            'male': 'male',
+            'female': 'female',
+            'other': 'other'
+          }
+          return genderMap[gender] || 'other'
+        }
+
+        // Limpar CPF (remover pontos, traços, etc.)
+        const cleanCpf = personalInfo.cpf.replace(/\D/g, '')
+
         const payload: any = {
           name: personalInfo.nomeCompleto,
-          cpf: personalInfo.cpf,
+          cpf: cleanCpf,
           email: personalInfo.email || undefined,
           phone: personalInfo.telefone || undefined,
           birthDate: personalInfo.dataNascimento,
-          gender: personalInfo.sexo,
+          gender: mapGender(personalInfo.sexo),
           neighborhood: personalInfo.bairro || undefined,
           city: personalInfo.cidade || undefined,
           state: personalInfo.estado || undefined,
@@ -264,14 +280,28 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
         } else {
           await PatientService.createPatient(payload)
           alert('Paciente criado com sucesso!')
+          // Limpar dados do formulário após cadastro bem-sucedido
+          clearFormData()
         }
       } catch (err: any) {
-        console.error(err)
-        setError(err?.response?.data?.message || err?.message || 'Erro ao salvar')
+        console.error('Erro ao salvar paciente:', err)
+        const errorMessage = err?.response?.data?.message || err?.message || 'Erro ao salvar paciente'
+        setError(errorMessage)
+        alert(`Erro: ${errorMessage}`)
       } finally {
         setSaving(false)
       }
     })()
+  }
+
+  /**
+   * Limpa todos os dados do formulário
+   */
+  const clearFormData = (): void => {
+    setPersonalInfo(initialPersonalInfo)
+    setMedicalInfo(initialMedicalInfo)
+    setMedications([])
+    setError(null)
   }
 
   /**
@@ -289,13 +319,29 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
           return
         }
 
+        // Mapear gênero para os valores esperados pelo backend
+        const mapGender = (gender: string): string => {
+          const genderMap: { [key: string]: string } = {
+            'Masculino': 'male',
+            'Feminino': 'female',
+            'Outro': 'other',
+            'male': 'male',
+            'female': 'female',
+            'other': 'other'
+          }
+          return genderMap[gender] || 'other'
+        }
+
+        // Limpar CPF (remover pontos, traços, etc.)
+        const cleanCpf = personalInfo.cpf.replace(/\D/g, '')
+
         const payload: any = {
           name: personalInfo.nomeCompleto,
-          cpf: personalInfo.cpf,
+          cpf: cleanCpf,
           email: personalInfo.email || undefined,
           phone: personalInfo.telefone || undefined,
           birthDate: personalInfo.dataNascimento,
-          gender: personalInfo.sexo,
+          gender: mapGender(personalInfo.sexo),
           neighborhood: personalInfo.bairro || undefined,
           city: personalInfo.cidade || undefined,
           state: personalInfo.estado || undefined,
@@ -305,6 +351,8 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
         }
         await PatientService.createPatient(payload)
         alert('Novo paciente cadastrado com sucesso!')
+        // Limpar dados do formulário após cadastro bem-sucedido
+        clearFormData()
       } catch (err: any) {
         console.error(err)
         setError(err?.response?.data?.message || err?.message || 'Erro ao criar paciente')
@@ -445,13 +493,17 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
               <Label htmlFor="sexo" className="text-sm font-medium text-gray-700">
                 Sexo
               </Label>
-              <Input
+              <select
                 id="sexo"
                 value={personalInfo.sexo}
                 onChange={(e) => setPersonalInfo({ ...personalInfo, sexo: e.target.value })}
-                className="mt-1"
-                placeholder="Masculino/Feminino/Outro"
-              />
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Selecione o sexo</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Feminino">Feminino</option>
+                <option value="Outro">Outro</option>
+              </select>
             </div>
           </div>
         </Card>

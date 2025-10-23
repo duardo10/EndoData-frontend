@@ -76,8 +76,13 @@ export class PatientService {
    * @param data - Payload do paciente
    */
   static async createPatient(data: Partial<Patient>): Promise<Patient> {
-    const response = await api.post('/patients', data)
-    return response.data
+    try {
+      const response = await api.post('/patients', data)
+      return response.data
+    } catch (error: any) {
+      console.error('Erro ao criar paciente:', error)
+      throw new Error(error.response?.data?.message || error.message || 'Erro ao criar paciente')
+    }
   }
 
   /**
