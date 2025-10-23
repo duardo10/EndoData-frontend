@@ -267,7 +267,7 @@ export default function ReceitasPage() {
 
     setIsSearchingPatients(true);
     try {
-      const response = await fetch(`http://localhost:4000/api/patients/search?searchText=${encodeURIComponent(searchTerm)}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/search?searchText=${encodeURIComponent(searchTerm)}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           'Content-Type': 'application/json'
@@ -691,7 +691,7 @@ export default function ReceitasPage() {
       document.body.appendChild(loadingAlert)
 
       // Busca todas as receitas sem limite de página
-      const response = await fetch(`http://localhost:4000/api/receipts?limit=1000&page=1`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/receipts?limit=1000&page=1`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -935,7 +935,7 @@ export default function ReceitasPage() {
 
       for (const receiptId of selectedReceipts) {
         try {
-          const response = await fetch(`http://localhost:4000/api/receipts/${receiptId}`, {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/receipts/${receiptId}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -1045,7 +1045,7 @@ export default function ReceitasPage() {
       
       console.log('📤 Enviando para API:', updatePayload)
       
-      const response = await fetch(`http://localhost:4000/api/receipts/${selectedReceipt.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/receipts/${selectedReceipt.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
