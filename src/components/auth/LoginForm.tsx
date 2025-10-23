@@ -128,7 +128,7 @@ export default function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-[49px] px-3 font-roboto text-[14px] leading-[22px] font-normal bg-white border border-[#DEE1E6] rounded-[6px] outline-none focus:border-[#2074E9] hover:border-[#DEE1E6] focus:ring-1 focus:ring-[#2074E9] focus:ring-offset-0 transition-colors"
+               className="w-full h-[49px] px-3 font-roboto text-[14px] leading-[22px] font-normal text-[#2074E9] bg-white border border-[#DEE1E6] rounded-[6px] outline-none focus:border-[#2074E9] hover:border-[#DEE1E6] focus:ring-1 focus:ring-[#2074E9] focus:ring-offset-0 transition-colors"
             />
           </div>
 
@@ -144,7 +144,8 @@ export default function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full h-[49px] px-3 font-roboto text-[14px] leading-[22px] font-normal bg-white border border-[#DEE1E6] rounded-[6px] outline-none focus:border-[#2074E9] hover:border-[#DEE1E6] focus:ring-1 focus:ring-[#2074E9] focus:ring-offset-0 transition-colors"
+              className="w-full h-[49px] px-3 font-roboto text-[14px] leading-[22px] font-normal text-[#2074E9] bg-white border border-[#DEE1E6] rounded-[6px] outline-none focus:border-[#2074E9] hover:border-[#DEE1E6] focus:ring-1 focus:ring-[#2074E9] focus:ring-offset-0 transition-colors"
+
             />
           </div>
 
