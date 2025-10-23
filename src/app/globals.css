@@ -107,3 +107,14 @@
     @apply shadow-lg;
   }
 }
+
+/* Forçar tema claro para labels específicos */
+.light-theme-label {
+  color: rgb(55 65 81) !important; /* text-gray-700 */
+  background-color: transparent !important;
+}
+
+.light-theme-label * {
+  color: rgb(55 65 81) !important;
+  background-color: transparent !important;
+}

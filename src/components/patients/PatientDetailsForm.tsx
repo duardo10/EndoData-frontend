@@ -193,7 +193,7 @@ export function PatientDetailsForm(): React.ReactElement {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-theme="light">
       {/* Formulário principal em duas colunas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
   {/* Coluna esquerda - Informações Pessoais */}
@@ -206,7 +206,7 @@ export function PatientDetailsForm(): React.ReactElement {
           <div className="space-y-4">
             {/* Nome Completo */}
             <div>
-              <Label htmlFor="nomeCompleto" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="nomeCompleto" className="text-sm font-medium text-gray-700 light-theme-label light-theme-label">
                 Nome Completo
               </Label>
               <Input
@@ -220,7 +220,7 @@ export function PatientDetailsForm(): React.ReactElement {
 
             {/* Data de Nascimento */}
             <div>
-              <Label htmlFor="dataNascimento" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="dataNascimento" className="text-sm font-medium text-gray-700 light-theme-label">
                 Data de Nascimento
               </Label>
               <Input
@@ -234,7 +234,7 @@ export function PatientDetailsForm(): React.ReactElement {
 
             {/* CPF */}
             <div>
-              <Label htmlFor="cpf" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="cpf" className="text-sm font-medium text-gray-700 light-theme-label">
                 CPF
               </Label>
               <Input
@@ -248,7 +248,7 @@ export function PatientDetailsForm(): React.ReactElement {
 
             {/* Telefone */}
             <div>
-              <Label htmlFor="telefone" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="telefone" className="text-sm font-medium text-gray-700 light-theme-label">
                 Telefone
               </Label>
               <Input
@@ -262,7 +262,7 @@ export function PatientDetailsForm(): React.ReactElement {
 
             {/* E-mail */}
             <div>
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700 light-theme-label">
                 E-mail
               </Label>
               <Input
@@ -277,7 +277,7 @@ export function PatientDetailsForm(): React.ReactElement {
 
             {/* Bairro */}
             <div>
-              <Label htmlFor="bairro" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="bairro" className="text-sm font-medium text-gray-700 light-theme-label">
                 Bairro
               </Label>
               <Input
@@ -291,7 +291,7 @@ export function PatientDetailsForm(): React.ReactElement {
 
             {/* Cidade */}
             <div>
-              <Label htmlFor="cidade" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="cidade" className="text-sm font-medium text-gray-700 light-theme-label">
                 Cidade
               </Label>
               <Input
@@ -305,7 +305,7 @@ export function PatientDetailsForm(): React.ReactElement {
 
             {/* Estado */}
             <div>
-              <Label htmlFor="estado" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="estado" className="text-sm font-medium text-gray-700 light-theme-label">
                 Estado
               </Label>
               <Input
@@ -320,7 +320,7 @@ export function PatientDetailsForm(): React.ReactElement {
 
             {/* Sexo */}
             <div>
-              <Label htmlFor="sexo" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="sexo" className="text-sm font-medium text-gray-700 light-theme-label">
                 Sexo
               </Label>
               <Input
@@ -344,7 +344,7 @@ export function PatientDetailsForm(): React.ReactElement {
           <div className="space-y-4">
             {/* Tipo Sanguíneo */}
             <div>
-              <Label htmlFor="tipoSanguineo" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="tipoSanguineo" className="text-sm font-medium text-gray-700 light-theme-label">
                 Tipo Sanguíneo
               </Label>
               <Input
@@ -358,7 +358,7 @@ export function PatientDetailsForm(): React.ReactElement {
 
             {/* Alergias */}
             <div>
-              <Label htmlFor="alergias" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="alergias" className="text-sm font-medium text-gray-700 light-theme-label">
                 Alergias
               </Label>
               <Input
@@ -372,7 +372,7 @@ export function PatientDetailsForm(): React.ReactElement {
 
             {/* Condições Pré-existentes */}
             <div>
-              <Label htmlFor="condicoesPreExistentes" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="condicoesPreExistentes" className="text-sm font-medium text-gray-700 light-theme-label">
                 Condições Pré-existentes
               </Label>
               <Input
@@ -386,7 +386,7 @@ export function PatientDetailsForm(): React.ReactElement {
 
             {/* Medicamentos em Uso */}
             <div>
-              <Label className="text-sm font-medium text-gray-700 mb-3 block">
+              <Label className="text-sm font-medium text-gray-700 light-theme-label mb-3 block">
                 Medicamentos em Uso
               </Label>
               
@@ -439,7 +439,7 @@ export function PatientDetailsForm(): React.ReactElement {
             {/* Histórico do Paciente */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <Label className="text-sm font-medium text-gray-700">
+                <Label className="text-sm font-medium text-gray-700 light-theme-label">
                   Histórico do Paciente
                 </Label>
                 <Button
@@ -468,7 +468,7 @@ export function PatientDetailsForm(): React.ReactElement {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-gray-500 hover:text-gray-700"
+                          className="text-gray-500 hover:text-gray-700 light-theme-label"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -482,7 +482,7 @@ export function PatientDetailsForm(): React.ReactElement {
                         </Button>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-700 leading-relaxed">
+                    <p className="text-sm text-gray-700 light-theme-label leading-relaxed">
                       {entry.descricao}
                     </p>
                   </div>
