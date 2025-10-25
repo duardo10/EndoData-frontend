@@ -144,25 +144,27 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
       setLoading(true)
       setError(null)
       try {
-        const data = await PatientService.getPatientById(patientId)
+        // Usar endpoint completo para obter todos os dados
+        const data = await PatientService.getPatientComplete(patientId)
         if (!mounted) return
         // Mapear campos básicos que existam
+        const patient = data.patient || data
         setPersonalInfo({
-          nomeCompleto: (data as any).name || '',
-          dataNascimento: (data as any).birthDate || '',
-          cpf: (data as any).cpf || '',
-          telefone: (data as any).phone || '',
-          email: (data as any).email || '',
-          bairro: '',
-          cidade: '',
-          estado: '',
-          sexo: (data as any).gender || ''
+          nomeCompleto: patient.name || '',
+          dataNascimento: patient.birthDate || '',
+          cpf: patient.cpf || '',
+          telefone: patient.phone || '',
+          email: patient.email || '',
+          bairro: (patient as any).neighborhood || '',
+          cidade: (patient as any).city || '',
+          estado: (patient as any).state || '',
+          sexo: patient.gender || ''
         })
-        // dados médicos simples (se existirem)
+        // dados médicos completos
         setMedicalInfo({
-          tipoSanguineo: '',
-          alergias: '',
-          condicoesPreExistentes: ''
+          tipoSanguineo: (patient as any).bloodType || '',
+          alergias: (patient as any).allergies || '',
+          condicoesPreExistentes: (patient as any).medicalHistory || ''
         })
         // medicamentos e histórico podem vir do backend em arrays
         setMedications((data as any).medications || [])
@@ -233,10 +235,10 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
       setSaving(true)
       setError(null)
       try {
-        // Validações mínimas
-        if (!personalInfo.nomeCompleto || !personalInfo.cpf || !personalInfo.dataNascimento || !personalInfo.sexo) {
-          throw new Error('Preencha os campos obrigatórios: nome, CPF, data de nascimento e sexo.')
-        }
+        // Validações mínimas removidas conforme solicitado
+        // if (!personalInfo.nomeCompleto || !personalInfo.cpf || !personalInfo.dataNascimento || !personalInfo.sexo) {
+        //   throw new Error('Preencha os campos obrigatórios: nome, CPF, data de nascimento e sexo.')
+        // }
 
         const userId = getCurrentUserId()
         if (!userId) {
@@ -256,14 +258,17 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
           return genderMap[gender] || 'other'
         }
 
-        // Limpar CPF (remover pontos, traços, etc.)
-        const cleanCpf = personalInfo.cpf.replace(/\D/g, '')
+        // Limpar CPF (remover pontos, traços, etc.) - apenas dígitos
+        const cleanCpf = personalInfo.cpf ? personalInfo.cpf.replace(/\D/g, '') : ''
+        
+        // Limpar telefone (remover formatação)
+        const cleanPhone = personalInfo.telefone ? personalInfo.telefone.replace(/\D/g, '') : undefined
 
         const payload: any = {
           name: personalInfo.nomeCompleto,
           cpf: cleanCpf,
           email: personalInfo.email || undefined,
-          phone: personalInfo.telefone || undefined,
+          phone: cleanPhone,
           birthDate: personalInfo.dataNascimento,
           gender: mapGender(personalInfo.sexo),
           neighborhood: personalInfo.bairro || undefined,
@@ -277,6 +282,8 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
         if (patientId) {
           await PatientService.updatePatient(patientId, payload)
           alert('Informações do paciente atualizadas com sucesso!')
+          // Redirecionar para busca após edição
+          window.location.href = '/dashboard/pacientes/busca'
         } else {
           await PatientService.createPatient(payload)
           alert('Paciente criado com sucesso!')
@@ -332,14 +339,17 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
           return genderMap[gender] || 'other'
         }
 
-        // Limpar CPF (remover pontos, traços, etc.)
-        const cleanCpf = personalInfo.cpf.replace(/\D/g, '')
+        // Limpar CPF (remover pontos, traços, etc.) - apenas dígitos
+        const cleanCpf = personalInfo.cpf ? personalInfo.cpf.replace(/\D/g, '') : ''
+        
+        // Limpar telefone (remover formatação)
+        const cleanPhone = personalInfo.telefone ? personalInfo.telefone.replace(/\D/g, '') : undefined
 
         const payload: any = {
           name: personalInfo.nomeCompleto,
           cpf: cleanCpf,
           email: personalInfo.email || undefined,
-          phone: personalInfo.telefone || undefined,
+          phone: cleanPhone,
           birthDate: personalInfo.dataNascimento,
           gender: mapGender(personalInfo.sexo),
           neighborhood: personalInfo.bairro || undefined,
@@ -712,16 +722,18 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
             disabled={saving}
           >
             <Save className="w-5 h-5 mr-2" />
-            {saving ? 'Salvando...' : 'Salvar Informações do Paciente'}
+            {saving ? 'Salvando...' : (patientId ? 'Atualizar Paciente' : 'Salvar Informações do Paciente')}
           </Button>
         
-        <Button
-          onClick={saveAsNewPatient}
-          className="bg-green-600 hover:bg-green-700 text-white px-8 py-3"
-        >
-          <UserPlus className="w-5 h-5 mr-2" />
-          Salvar como Novo Paciente
-        </Button>
+        {!patientId && (
+          <Button
+            onClick={saveAsNewPatient}
+            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3"
+          >
+            <UserPlus className="w-5 h-5 mr-2" />
+            Salvar como Novo Paciente
+          </Button>
+        )}
       </div>
       {error && (
         <div className="text-red-600 text-center mt-2">{error}</div>

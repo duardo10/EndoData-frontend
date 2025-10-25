@@ -54,7 +54,19 @@ export class PatientService {
    */
   static async searchPatients(searchText: string, limit: number = 10): Promise<PatientsResponse> {
     const params = new URLSearchParams()
-    if (searchText) params.append('searchText', searchText)
+    
+    if (searchText) {
+      // Verificar se é um CPF (apenas dígitos)
+      const cleanText = searchText.replace(/\D/g, '')
+      if (cleanText.length >= 3 && /^\d+$/.test(cleanText)) {
+        // Se parece com CPF, usar parâmetro cpf
+        params.append('cpf', cleanText)
+      } else {
+        // Caso contrário, usar searchText para busca por nome
+        params.append('searchText', searchText)
+      }
+    }
+    
     params.append('limit', limit.toString())
     
     const response = await api.get(`/patients/search?${params.toString()}`)
@@ -95,6 +107,39 @@ export class PatientService {
    */
   static async updatePatient(id: string, data: Partial<Patient>): Promise<Patient> {
     const response = await api.patch(`/patients/${id}`, data)
+    return response.data
+  }
+
+  /**
+   * Busca dados completos do paciente incluindo cálculos e prescrições.
+   * @param id - ID do paciente
+   * @returns Promise com dados completos do paciente
+   */
+  static async getPatientComplete(id: string): Promise<{
+    patient: Patient;
+    calculations: any[];
+    prescriptions: any[];
+  }> {
+    const response = await api.get(`/patients/${id}/complete`)
+    return response.data
+  }
+
+  /**
+   * Exclui um paciente (soft delete).
+   * @param id - ID do paciente
+   * @returns Promise<void>
+   */
+  static async deletePatient(id: string): Promise<void> {
+    await api.delete(`/patients/${id}`)
+  }
+
+  /**
+   * Restaura um paciente excluído.
+   * @param id - ID do paciente
+   * @returns Promise<Patient>
+   */
+  static async restorePatient(id: string): Promise<Patient> {
+    const response = await api.post(`/patients/${id}/restore`)
     return response.data
   }
 }

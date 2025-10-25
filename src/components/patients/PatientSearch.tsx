@@ -1,174 +1,131 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { Calendar, IdCard } from "lucide-react";
+import { Calendar, IdCard, Loader2 } from "lucide-react";
 import styles from './PatientSearch.module.css'
+import { PatientService, Patient } from '@/services/patientService'
 
-type Patient = {
-  id: string;
-  name: string;
-  cpf: string;
-  birth: string;
-  photo: string;
-};
-
-const MOCK_PATIENTS: Patient[] = [
-  {
-    id: "1",
-    name: "Bruno Santos",
-    cpf: "987.654.321-00",
-    birth: "22/07/1985",
-    photo: "https://randomuser.me/api/portraits/men/1.jpg",
-  },
-  {
-    id: "2",
-    name: "Carla Oliveira",
-    cpf: "456.789.123-00",
-    birth: "01/11/1978",
-    photo: "https://randomuser.me/api/portraits/women/2.jpg",
-  },
-  {
-    id: "3",
-    name: "Elaine Costa",
-    cpf: "321.654.987-00",
-    birth: "29/09/1972",
-    photo: "https://randomuser.me/api/portraits/women/3.jpg",
-  },
-  {
-    id: "4",
-    name: "Fábio Rodrigues",
-    cpf: "111.222.333-44",
-    birth: "05/06/1988",
-    photo: "https://randomuser.me/api/portraits/men/4.jpg",
-  },
-  {
-    id: "5",
-    name: "Mariana Silva",
-    cpf: "222.333.444-55",
-    birth: "12/03/1990",
-    photo: "https://randomuser.me/api/portraits/women/5.jpg",
-  },
-  {
-    id: "6",
-    name: "Lucas Almeida",
-    cpf: "333.444.555-66",
-    birth: "18/10/1983",
-    photo: "https://randomuser.me/api/portraits/men/6.jpg",
-  },
-  {
-    id: "7",
-    name: "Renata Carvalho",
-    cpf: "444.555.666-77",
-    birth: "07/02/1992",
-    photo: "https://randomuser.me/api/portraits/women/7.jpg",
-  },
-  {
-    id: "8",
-    name: "Diego Fernandes",
-    cpf: "555.666.777-88",
-    birth: "25/08/1987",
-    photo: "https://randomuser.me/api/portraits/men/8.jpg",
-  },
-  {
-    id: "9",
-    name: "Patrícia Lima",
-    cpf: "666.777.888-99",
-    birth: "09/04/1981",
-    photo: "https://randomuser.me/api/portraits/women/9.jpg",
-  },
-  {
-    id: "10",
-    name: "André Pereira",
-    cpf: "777.888.999-00",
-    birth: "14/09/1995",
-    photo: "https://randomuser.me/api/portraits/men/10.jpg",
-  },
-  {
-    id: "11",
-    name: "Camila Souza",
-    cpf: "888.999.000-11",
-    birth: "23/06/1989",
-    photo: "https://randomuser.me/api/portraits/women/11.jpg",
-  },
-  {
-    id: "12",
-    name: "Ricardo Barbosa",
-    cpf: "999.000.111-22",
-    birth: "30/12/1975",
-    photo: "https://randomuser.me/api/portraits/men/12.jpg",
-  },
-  {
-    id: "13",
-    name: "Fernanda Dias",
-    cpf: "123.456.789-10",
-    birth: "11/05/1993",
-    photo: "https://randomuser.me/api/portraits/women/13.jpg",
-  },
-  {
-    id: "14",
-    name: "João Mendes",
-    cpf: "234.567.890-11",
-    birth: "08/11/1984",
-    photo: "https://randomuser.me/api/portraits/men/14.jpg",
-  },
-  {
-    id: "15",
-    name: "Isabela Rocha",
-    cpf: "345.678.901-22",
-    birth: "03/07/1991",
-    photo: "https://randomuser.me/api/portraits/women/15.jpg",
-  },
-];
+// Interface para o resultado da busca com paginação
+interface SearchResult {
+  patients: Patient[];
+  total: number;
+  page: number;
+  limit: number;
+}
 
 export function PatientSearch(): React.ReactElement {
-  const [query, setQuery] = React.useState("");
-  const [currentPage, setCurrentPage] = React.useState(1);
+  const [query, setQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalPatients, setTotalPatients] = useState(0);
   const itemsPerPage = 6;
-  const [showSuggestions, setShowSuggestions] = React.useState(false);
 
-  // Filtra pacientes
-  // normaliza (remove acentos e deixa minúsculo)
-  const normalize = (s: string) =>
-    s
-      .normalize("NFD")
-      .replace(/\p{Diacritic}/gu, "")
-      .toLowerCase()
-      .trim();
+  // Função para formatar CPF
+  const formatCpf = (cpf: string) => {
+    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  };
 
-  const filtered = React.useMemo(() => {
-    const q = normalize(query);
-    if (!q) return MOCK_PATIENTS;
+  // Função para formatar data
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR');
+  };
 
-    // Se a query contém apenas dígitos, comparar com CPF sem formatação por prefixo
-    const digitsOnly = q.replace(/\D/g, "");
+  // Função para gerar avatar baseado no nome
+  const generateAvatar = (name: string) => {
+    const initials = name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+    
+    // Gerar cor baseada no nome
+    const colors = [
+      'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500',
+      'bg-red-500', 'bg-yellow-500', 'bg-indigo-500', 'bg-teal-500'
+    ];
+    const colorIndex = name.length % colors.length;
+    
+    return (
+      <div className={`w-12 h-12 rounded-full ${colors[colorIndex]} flex items-center justify-center text-white font-semibold`}>
+        {initials}
+      </div>
+    );
+  };
 
-    return MOCK_PATIENTS.filter((p) => {
-      const nameNormalized = normalize(p.name);
-      const cpfDigits = p.cpf.replace(/\D/g, "");
+  // Buscar pacientes
+  const searchPatients = async (searchText: string = '', page: number = 1) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      let result: SearchResult;
+      
+      if (searchText.trim()) {
+        // Busca por texto (nome ou CPF)
+        result = await PatientService.searchPatients(searchText.trim(), itemsPerPage);
+      } else {
+        // Busca todos os pacientes
+        const response = await PatientService.getPatients();
+        result = {
+          patients: response.patients,
+          total: response.total,
+          page: response.page,
+          limit: response.limit
+        };
+      }
+      
+      setPatients(result.patients);
+      setTotalPatients(result.total);
+      setTotalPages(Math.ceil(result.total / itemsPerPage));
+    } catch (err: any) {
+      console.error('Erro ao buscar pacientes:', err);
+      setError(err?.message || 'Erro ao carregar pacientes');
+      setPatients([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      // verificar prefixo do nome ou do cpf
-      const nameMatch = nameNormalized.startsWith(q);
-      const cpfMatch = digitsOnly ? cpfDigits.startsWith(digitsOnly) : false;
+  // Carregar pacientes iniciais
+  useEffect(() => {
+    searchPatients();
+  }, []);
 
-      return nameMatch || cpfMatch;
-    });
+  // Buscar quando a query mudar (com debounce)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (query.trim()) {
+        searchPatients(query.trim(), 1);
+        setCurrentPage(1);
+      } else {
+        searchPatients('', 1);
+        setCurrentPage(1);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
   }, [query]);
 
   // Sugestões para autocomplete (limite de 5)
-  const suggestions = React.useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return filtered.slice(0, 5);
-  }, [filtered, query]);
+  const suggestions = useMemo(() => {
+    if (!query.trim() || loading) return [];
+    return patients.slice(0, 5);
+  }, [patients, query, loading]);
 
-  // Paginação (lógica original mantida)
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentPatients = filtered.slice(startIndex, startIndex + itemsPerPage);
-
+  // Paginação
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      searchPatients(query.trim(), page);
+    }
   };
 
   return (
@@ -179,8 +136,6 @@ export function PatientSearch(): React.ReactElement {
 
       <div className={styles.inputWrapper}>
         <div className="relative">
-          {" "}
-          {/* Adiciona um wrapper para o ícone */}
           <input
             aria-label="Buscar pacientes"
             className={styles.input}
@@ -195,43 +150,43 @@ export function PatientSearch(): React.ReactElement {
             onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
           />
           {/* Ícone de busca dentro do input */}
-          <svg
-            className={styles.icon}
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
+          {loading ? (
+            <Loader2 className={styles.icon} size={20} />
+          ) : (
+            <svg
+              className={styles.icon}
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          )}
           {/* Sugestões dropdown */}
           {showSuggestions && suggestions.length > 0 && (
             <div className={styles.suggestions}>
               <ul className={styles.suggestionsList}>
-                {suggestions.map((s) => (
-                  <li key={s.id} className={styles.suggestionItem}>
+                {suggestions.map((patient) => (
+                  <li key={patient.id} className={styles.suggestionItem}>
                     <Link
-                      href={`/dashboard/pacientes/${s.id}`}
+                      href={`/dashboard/pacientes/${patient.id}`}
                       className={styles.suggestionLink}
                       onClick={() => {
-                        setQuery(s.name);
+                        setQuery(patient.name);
                         setShowSuggestions(false);
                       }}
                     >
-                      <img
-                        src={s.photo}
-                        alt={s.name}
-                        className={styles.suggestionImg}
-                      />
+                      {generateAvatar(patient.name)}
                       <div>
-                        <div className="text-sm font-medium text-sky-700">{s.name}</div>
-                        <div className="text-xs text-gray-500">CPF: {s.cpf}</div>
+                        <div className="text-sm font-medium text-sky-700">{patient.name}</div>
+                        <div className="text-xs text-gray-500">CPF: {formatCpf(patient.cpf)}</div>
                       </div>
                     </Link>
                   </li>
@@ -241,47 +196,71 @@ export function PatientSearch(): React.ReactElement {
           )}
         </div>
       </div>
-      <div className={styles.grid}>
-        {currentPatients.map((p) => (
-          <Link
-            key={p.id}
-            href={`/dashboard/pacientes/${p.id}`}
-            className="block"
-          >
-            {/* COR DE FUNDO DO CARD ALTERADA AQUI */}
-            <div className={styles.card}>
-              <img
-                src={p.photo}
-                alt={p.name}
-                className={styles.cardImg}
-              />
-              <div>
-                <div className={styles.cardName}>{p.name}</div>
-                <div className={styles.cardMeta}>
-                  <IdCard size={14} /> <span>CPF: {p.cpf}</span>
-                </div>
-                <div className={styles.cardMeta}>
-                  <Calendar size={14} /> <span>Nascimento: {p.birth}</span>
-                </div>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
 
-      {filtered.length === 0 && (
-        <div className="text-center py-10 text-gray-500">
-          <h2 className="text-3xl font-bold mb-2">404</h2>
-          <p className="mb-2">This page could not be found.</p>
-          <p>O próximo passo está em desenvolvimento.</p>
+      {/* Estados de loading e erro */}
+      {loading && patients.length === 0 && (
+        <div className="flex justify-center items-center py-10">
+          <Loader2 className="animate-spin" size={32} />
+          <span className="ml-2">Carregando pacientes...</span>
         </div>
       )}
 
-      {totalPages > 1 && (
+      {error && (
+        <div className="text-center py-10 text-red-500">
+          <h2 className="text-xl font-bold mb-2">Erro</h2>
+          <p>{error}</p>
+          <button 
+            onClick={() => searchPatients(query.trim(), currentPage)}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
+      {/* Grid de pacientes */}
+      {!loading && !error && (
+        <div className={styles.grid}>
+          {patients.map((patient) => (
+            <Link
+              key={patient.id}
+              href={`/dashboard/pacientes/${patient.id}`}
+              className="block"
+            >
+              <div className={styles.card}>
+                {generateAvatar(patient.name)}
+                <div>
+                  <div className={styles.cardName}>{patient.name}</div>
+                  <div className={styles.cardMeta}>
+                    <IdCard size={14} /> <span>CPF: {formatCpf(patient.cpf)}</span>
+                  </div>
+                  {patient.birthDate && (
+                    <div className={styles.cardMeta}>
+                      <Calendar size={14} /> <span>Nascimento: {formatDate(patient.birthDate)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Estado vazio */}
+      {!loading && !error && patients.length === 0 && (
+        <div className="text-center py-10 text-gray-500">
+          <h2 className="text-3xl font-bold mb-2">Nenhum paciente encontrado</h2>
+          <p className="mb-2">Não há pacientes cadastrados ou que correspondam à sua busca.</p>
+          <p>Cadastre um novo paciente para começar.</p>
+        </div>
+      )}
+
+      {/* Paginação */}
+      {!loading && !error && totalPages > 1 && (
         <div className={styles.pagination}>
           <button
             onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
+            disabled={currentPage === 1 || loading}
             className={styles.pageBtn}
           >
             &lt; Anterior
@@ -292,6 +271,7 @@ export function PatientSearch(): React.ReactElement {
               <button
                 key={i + 1}
                 onClick={() => handlePageChange(i + 1)}
+                disabled={loading}
                 className={`${styles.pageNumber} ${
                   currentPage === i + 1
                     ? styles.pageNumberActive
@@ -307,11 +287,18 @@ export function PatientSearch(): React.ReactElement {
 
           <button
             onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
+            disabled={currentPage === totalPages || loading}
             className={styles.pageBtn}
           >
             Próximo &gt;
           </button>
+        </div>
+      )}
+
+      {/* Informações de paginação */}
+      {!loading && !error && patients.length > 0 && (
+        <div className="text-center text-sm text-gray-500 mt-4">
+          Mostrando {patients.length} de {totalPatients} pacientes
         </div>
       )}
     </div>
