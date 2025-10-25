@@ -1,5 +1,13 @@
 'use client'
 
+/**
+ * @fileoverview Modal de visualização de prescrição.
+ *
+ * Atualizações recentes:
+ * - Botões de fechar/fechar modal com efeito de hover (sombra) e estilização consistente para melhor feedback visual.
+ * - Sem mudanças funcionais em dados; apenas UI/UX.
+ */
+
 import { X, FileText, Calendar, User, Pill } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -44,7 +52,7 @@ export function ViewPrescriptionModal({
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full"
+            className="p-2 hover:bg-gray-100 hover:shadow-lg rounded-full transition-shadow"
           >
             <X className="w-5 h-5" />
           </button>
@@ -163,8 +171,8 @@ export function ViewPrescriptionModal({
           <div className="flex gap-3 pt-4 border-t">
             <Button
               type="button"
-              variant="outline"
               onClick={onClose}
+              className="bg-red-600 hover:bg-red-700 text-white hover:shadow-md transition-shadow"
             >
               Fechar
             </Button>
