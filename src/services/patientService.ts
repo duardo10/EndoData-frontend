@@ -59,7 +59,7 @@ export class PatientService {
       // Verificar se é um CPF (apenas dígitos)
       const cleanText = searchText.replace(/\D/g, '')
       if (cleanText.length >= 3 && /^\d+$/.test(cleanText)) {
-        // Se parece com CPF, usar parâmetro cpf
+        // Se parece com CPF (3+ dígitos), usar parâmetro cpf para busca parcial
         params.append('cpf', cleanText)
       } else {
         // Caso contrário, usar searchText para busca por nome
