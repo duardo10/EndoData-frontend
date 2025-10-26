@@ -264,7 +264,10 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
             'Outro': 'other',
             'male': 'male',
             'female': 'female',
-            'other': 'other'
+            'other': 'other',
+            'MASCULINO': 'male',
+            'FEMININO': 'female',
+            'OUTRO': 'other'
           }
           return genderMap[gender] || 'other'
         }
@@ -373,17 +376,17 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
         // Mapear gênero para os valores esperados pelo backend
         const mapGender = (gender: string): string => {
           const genderMap: { [key: string]: string } = {
-            'Masculino': 'MASCULINO',
-            'Feminino': 'FEMININO',
-            'Outro': 'OUTRO',
-            'male': 'MASCULINO',
-            'female': 'FEMININO',
-            'other': 'OUTRO',
-            'MASCULINO': 'MASCULINO',
-            'FEMININO': 'FEMININO',
-            'OUTRO': 'OUTRO'
+            'Masculino': 'male',
+            'Feminino': 'female',
+            'Outro': 'other',
+            'male': 'male',
+            'female': 'female',
+            'other': 'other',
+            'MASCULINO': 'male',
+            'FEMININO': 'female',
+            'OUTRO': 'other'
           }
-          return genderMap[gender] || ''
+          return genderMap[gender] || 'other'
         }
 
         // Forçar state uppercase
