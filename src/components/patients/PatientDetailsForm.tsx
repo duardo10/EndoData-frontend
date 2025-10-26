@@ -43,6 +43,8 @@ interface MedicalInfo {
   tipoSanguineo: string
   alergias: string
   condicoesPreExistentes: string
+  peso: string
+  altura: string
 }
 
 /**
@@ -84,7 +86,9 @@ const initialPersonalInfo: PersonalInfo = {
 const initialMedicalInfo: MedicalInfo = {
   tipoSanguineo: '',
   alergias: '',
-  condicoesPreExistentes: ''
+  condicoesPreExistentes: '',
+  peso: '',
+  altura: ''
 }
 
 /**
@@ -164,7 +168,9 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
         setMedicalInfo({
           tipoSanguineo: (patient as any).bloodType || '',
           alergias: (patient as any).allergies || '',
-          condicoesPreExistentes: (patient as any).medicalHistory || ''
+          condicoesPreExistentes: (patient as any).medicalHistory || '',
+          peso: (patient as any).weight || '',
+          altura: (patient as any).height || ''
         })
         // medicamentos e histórico podem vir do backend em arrays
         setMedications((data as any).medications || [])
@@ -235,49 +241,58 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
       setSaving(true)
       setError(null)
       try {
-        // Validações mínimas removidas conforme solicitado
-        // if (!personalInfo.nomeCompleto || !personalInfo.cpf || !personalInfo.dataNascimento || !personalInfo.sexo) {
-        //   throw new Error('Preencha os campos obrigatórios: nome, CPF, data de nascimento e sexo.')
-        // }
+        // -- VARIÁVEIS NORMALIZADAS --
+        const cleanCpf = personalInfo.cpf ? personalInfo.cpf.replace(/\D/g, '') : '';
+        const cleanPhone = personalInfo.telefone ? personalInfo.telefone.replace(/\D/g, '') : undefined;
+        const stateVal = personalInfo.estado ? personalInfo.estado.toUpperCase() : undefined;
+        const validWeight = medicalInfo.peso && /^\d{1,3}(\.\d{1,2})?$/.test(medicalInfo.peso) ? medicalInfo.peso : undefined;
+        const validHeight = medicalInfo.altura && /^\d{1,3}(\.\d)?$/.test(medicalInfo.altura) ? medicalInfo.altura : undefined;
+        const birthDate = personalInfo.dataNascimento ? personalInfo.dataNascimento : undefined;
+        const userId = getCurrentUserId();
 
-        const userId = getCurrentUserId()
-        if (!userId) {
-          throw new Error('Usuário não autenticado')
+        if (!personalInfo.nomeCompleto || !cleanCpf || !birthDate || !userId) {
+          throw new Error('Preencha todos os campos obrigatórios: nome, CPF, data de nascimento e usuário.');
         }
 
-        // Mapear gênero para os valores esperados pelo backend
+        // Novo mapGender seguro para backend
         const mapGender = (gender: string): string => {
           const genderMap: { [key: string]: string } = {
-            'Masculino': 'male',
-            'Feminino': 'female',
-            'Outro': 'other',
-            'male': 'male',
-            'female': 'female',
-            'other': 'other'
+            'Masculino': 'MASCULINO',
+            'Feminino': 'FEMININO',
+            'Outro': 'OUTRO',
+            'male': 'MASCULINO',
+            'female': 'FEMININO',
+            'other': 'OUTRO',
+            'MASCULINO': 'MASCULINO',
+            'FEMININO': 'FEMININO',
+            'OUTRO': 'OUTRO'
           }
-          return genderMap[gender] || 'other'
+          return genderMap[gender] || ''
         }
 
-        // Limpar CPF (remover pontos, traços, etc.) - apenas dígitos
-        const cleanCpf = personalInfo.cpf ? personalInfo.cpf.replace(/\D/g, '') : ''
-        
-        // Limpar telefone (remover formatação)
-        const cleanPhone = personalInfo.telefone ? personalInfo.telefone.replace(/\D/g, '') : undefined
-
+        // Payload limpo: só com valores preenchidos
         const payload: any = {
           name: personalInfo.nomeCompleto,
           cpf: cleanCpf,
-          email: personalInfo.email || undefined,
-          phone: cleanPhone,
-          birthDate: personalInfo.dataNascimento,
-          gender: mapGender(personalInfo.sexo),
-          neighborhood: personalInfo.bairro || undefined,
-          city: personalInfo.cidade || undefined,
-          state: personalInfo.estado || undefined,
-          medicalHistory: medicalInfo.condicoesPreExistentes || undefined,
-          allergies: medicalInfo.alergias || undefined,
+          birthDate,
           userId,
-        }
+        };
+        // gender seguro somente permitido
+        const validGenders = ['MASCULINO', 'FEMININO', 'OUTRO'];
+        const genderMapped = mapGender(personalInfo.sexo);
+        if (validGenders.includes(genderMapped)) payload.gender = genderMapped;
+        if (personalInfo.email && personalInfo.email !== '') payload.email = personalInfo.email;
+        if (cleanPhone && cleanPhone !== '') payload.phone = cleanPhone;
+        if (personalInfo.bairro && personalInfo.bairro !== '') payload.neighborhood = personalInfo.bairro;
+        if (personalInfo.cidade && personalInfo.cidade !== '') payload.city = personalInfo.cidade;
+        if (stateVal && stateVal !== '') payload.state = stateVal;
+        if (validWeight && validWeight !== '') payload.weight = validWeight;
+        if (validHeight && validHeight !== '') payload.height = validHeight;
+        // bloodType só válido
+        const validBloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+        if (validBloodTypes.includes(medicalInfo.tipoSanguineo)) payload.bloodType = medicalInfo.tipoSanguineo;
+        if (medicalInfo.condicoesPreExistentes && medicalInfo.condicoesPreExistentes !== '') payload.medicalHistory = medicalInfo.condicoesPreExistentes;
+        if (medicalInfo.alergias && medicalInfo.alergias !== '') payload.allergies = medicalInfo.alergias;
 
         if (patientId) {
           await PatientService.updatePatient(patientId, payload)
@@ -329,36 +344,56 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
         // Mapear gênero para os valores esperados pelo backend
         const mapGender = (gender: string): string => {
           const genderMap: { [key: string]: string } = {
-            'Masculino': 'male',
-            'Feminino': 'female',
-            'Outro': 'other',
-            'male': 'male',
-            'female': 'female',
-            'other': 'other'
+            'Masculino': 'MASCULINO',
+            'Feminino': 'FEMININO',
+            'Outro': 'OUTRO',
+            'male': 'MASCULINO',
+            'female': 'FEMININO',
+            'other': 'OUTRO',
+            'MASCULINO': 'MASCULINO',
+            'FEMININO': 'FEMININO',
+            'OUTRO': 'OUTRO',
           }
-          return genderMap[gender] || 'other'
+          return genderMap[gender] || 'OUTRO'
         }
 
-        // Limpar CPF (remover pontos, traços, etc.) - apenas dígitos
-        const cleanCpf = personalInfo.cpf ? personalInfo.cpf.replace(/\D/g, '') : ''
-        
-        // Limpar telefone (remover formatação)
-        const cleanPhone = personalInfo.telefone ? personalInfo.telefone.replace(/\D/g, '') : undefined
+        // Forçar state uppercase
+        const stateVal = personalInfo.estado ? personalInfo.estado.toUpperCase() : undefined;
+
+        // Certificar que peso/altura são válidos por regex
+        const validWeight = medicalInfo.peso && /^\d{1,3}(\.\d{1,2})?$/.test(medicalInfo.peso) ? medicalInfo.peso : undefined;
+        const validHeight = medicalInfo.altura && /^\d{1,3}(\.\d)?$/.test(medicalInfo.altura) ? medicalInfo.altura : undefined;
+
+        // Data ISO do input date (já é, mas garantir formato)
+        const birthDate = personalInfo.dataNascimento ? personalInfo.dataNascimento : undefined;
+
+        // Limpar CPF e telefone
+        const cleanCpf = personalInfo.cpf ? personalInfo.cpf.replace(/\D/g, '') : '';
+        const cleanPhone = personalInfo.telefone ? personalInfo.telefone.replace(/\D/g, '') : undefined;
+
+        // Mapear only if exists (para enums): tipo sanguíneo
+        const validBloodTypes = [
+          'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'
+        ];
+        const bloodType = validBloodTypes.includes(medicalInfo.tipoSanguineo) ? medicalInfo.tipoSanguineo : undefined;
 
         const payload: any = {
           name: personalInfo.nomeCompleto,
           cpf: cleanCpf,
-          email: personalInfo.email || undefined,
-          phone: cleanPhone,
-          birthDate: personalInfo.dataNascimento,
+          birthDate,
           gender: mapGender(personalInfo.sexo),
-          neighborhood: personalInfo.bairro || undefined,
-          city: personalInfo.cidade || undefined,
-          state: personalInfo.estado || undefined,
-          medicalHistory: medicalInfo.condicoesPreExistentes || undefined,
-          allergies: medicalInfo.alergias || undefined,
           userId,
-        }
+        };
+        if(personalInfo.email) payload.email = personalInfo.email;
+        if(cleanPhone) payload.phone = cleanPhone;
+        if(personalInfo.bairro) payload.neighborhood = personalInfo.bairro;
+        if(personalInfo.cidade) payload.city = personalInfo.cidade;
+        if(stateVal) payload.state = stateVal;
+        if(validWeight) payload.weight = validWeight;
+        if(validHeight) payload.height = validHeight;
+        if(bloodType) payload.bloodType = bloodType;
+        if(medicalInfo.condicoesPreExistentes) payload.medicalHistory = medicalInfo.condicoesPreExistentes;
+        if(medicalInfo.alergias) payload.allergies = medicalInfo.alergias;
         await PatientService.createPatient(payload)
         alert('Novo paciente cadastrado com sucesso!')
         // Limpar dados do formulário após cadastro bem-sucedido
@@ -531,13 +566,22 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
               <Label htmlFor="tipoSanguineo" className="text-sm font-medium text-gray-700">
                 Tipo Sanguíneo
               </Label>
-              <Input
+              <select
                 id="tipoSanguineo"
                 value={medicalInfo.tipoSanguineo}
-                onChange={(e) => setMedicalInfo({ ...medicalInfo, tipoSanguineo: e.target.value })}
-                className="mt-1"
-                placeholder="Ex: O+, A-, B+, AB-"
-              />
+                onChange={e => setMedicalInfo({ ...medicalInfo, tipoSanguineo: e.target.value })}
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Selecione</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+              </select>
             </div>
 
             {/* Alergias */}
