@@ -85,6 +85,14 @@ export function PatientSearch(): React.ReactElement {
       setPatients(result.patients);
       setTotalPatients(result.total);
       setTotalPages(Math.ceil(result.total / itemsPerPage));
+      
+      // Mostrar feedback visual para busca por CPF
+      const isNumericSearch = /^\d+$/.test(searchText.replace(/\D/g, ''))
+      const cleanSearch = searchText.replace(/\D/g, '')
+      if (isNumericSearch && cleanSearch.length >= 3) {
+        console.log(`🔍 Buscando por CPF: ${cleanSearch}`)
+      }
+      
     } catch (err: any) {
       console.error('Erro ao buscar pacientes:', err);
       setError(err?.message || 'Erro ao carregar pacientes');
@@ -99,8 +107,14 @@ export function PatientSearch(): React.ReactElement {
     searchPatients();
   }, []);
 
-  // Buscar quando a query mudar (com debounce)
+  // Buscar quando a query mudar (com debounce otimizado para CPF)
   useEffect(() => {
+    const isNumericInput = /^\d+$/.test(query.replace(/\D/g, ''))
+    const cleanInput = query.replace(/\D/g, '')
+    
+    // Debounce menor para CPF (150ms) e maior para nome (300ms)
+    const debounceTime = isNumericInput && cleanInput.length >= 3 ? 150 : 300
+    
     const timeoutId = setTimeout(() => {
       if (query.trim()) {
         searchPatients(query.trim(), 1);
@@ -109,7 +123,7 @@ export function PatientSearch(): React.ReactElement {
         searchPatients('', 1);
         setCurrentPage(1);
       }
-    }, 300);
+    }, debounceTime);
 
     return () => clearTimeout(timeoutId);
   }, [query]);
@@ -139,7 +153,7 @@ export function PatientSearch(): React.ReactElement {
           <input
             aria-label="Buscar pacientes"
             className={styles.input}
-            placeholder="Buscar por nome ou CPF..."
+            placeholder="Buscar por nome ou CPF (digite apenas números para CPF)..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
