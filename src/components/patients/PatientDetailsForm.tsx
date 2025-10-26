@@ -125,6 +125,20 @@ interface Props {
 }
 
 export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
+  /**
+   * Adiciona um novo medicamento à lista
+   */
+  const addMedication = (): void => {
+    if (newMedication.nome && newMedication.dosagem) {
+      const medication: Medication = {
+        id: Date.now().toString(),
+        nome: newMedication.nome,
+        dosagem: newMedication.dosagem
+      }
+      setMedications([...medications, medication])
+      setNewMedication({ nome: '', dosagem: '' })
+    }
+  }
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>(initialPersonalInfo)
   const [medicalInfo, setMedicalInfo] = useState<MedicalInfo>(initialMedicalInfo)
   const [medications, setMedications] = useState<Medication[]>(initialMedications)
@@ -139,59 +153,123 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
   // Carrega paciente quando um patientId for fornecido
   useEffect(() => {
     if (!patientId) return
-    let mounted = true
-    const load = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        // Usar endpoint completo para obter todos os dados
-        const data = await PatientService.getPatientComplete(patientId)
-        if (!mounted) return
-        // Mapear campos básicos que existam
-        const patient = data.patient || data
-        setPersonalInfo({
-          nomeCompleto: patient.name || '',
-          dataNascimento: patient.birthDate || '',
-          cpf: patient.cpf || '',
-          telefone: patient.phone || '',
-          email: patient.email || '',
-          bairro: (patient as any).neighborhood || '',
-          cidade: (patient as any).city || '',
-          estado: (patient as any).state || '',
-          sexo: patient.gender || ''
-        })
-        // dados médicos completos
-        setMedicalInfo({
-          tipoSanguineo: (patient as any).bloodType || '',
-          alergias: (patient as any).allergies || '',
-          condicoesPreExistentes: (patient as any).medicalHistory || ''
-        })
-        // medicamentos e histórico podem vir do backend em arrays
-        setMedications((data as any).medications || [])
-        setHistory((data as any).history || [])
-      } catch (err: any) {
-        setError(err?.message || 'Erro ao carregar paciente')
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-    return () => { mounted = false }
+    // ...existing code...
   }, [patientId])
 
   /**
-   * Adiciona um novo medicamento à lista
+   * Valida os campos obrigatórios e formato antes de enviar
+   * @returns {string|null} Mensagem de erro ou null se válido
    */
-  const addMedication = (): void => {
-    if (newMedication.nome && newMedication.dosagem) {
-      const medication: Medication = {
-        id: Date.now().toString(),
-        nome: newMedication.nome,
-        dosagem: newMedication.dosagem
-      }
-      setMedications([...medications, medication])
-      setNewMedication({ nome: '', dosagem: '' })
+  function validateFields(): string | null {
+    const cleanCpf = personalInfo.cpf ? personalInfo.cpf.replace(/\D/g, '') : ''
+    const cleanPhone = personalInfo.telefone ? personalInfo.telefone.replace(/\D/g, '') : ''
+    const state = personalInfo.estado.trim().toUpperCase()
+    const birthDate = personalInfo.dataNascimento
+    const name = personalInfo.nomeCompleto.trim()
+    const gender = personalInfo.sexo
+    const userId = getCurrentUserId()
+
+    if (!name) return 'Nome completo é obrigatório.'
+    if (!cleanCpf || cleanCpf.length !== 11) return 'CPF deve conter 11 dígitos.'
+    // Validação de CPF (algoritmo oficial)
+    function isValidCpf(cpf: string): boolean {
+      if (!cpf || cpf.length !== 11) return false;
+      if (/^(\d)\1{10}$/.test(cpf)) return false;
+      const calcCheckDigit = (base: string, factorStart: number): number => {
+        let total = 0;
+        for (let i = 0; i < base.length; i++) {
+          total += parseInt(base.charAt(i), 10) * (factorStart - i);
+        }
+        const remainder = total % 11;
+        return remainder < 2 ? 0 : 11 - remainder;
+      };
+      const baseNine = cpf.substring(0, 9);
+      const d1 = calcCheckDigit(baseNine, 10);
+      const baseTen = baseNine + String(d1);
+      const d2 = calcCheckDigit(baseTen, 11);
+      return cpf === baseNine + String(d1) + String(d2);
     }
+    if (!isValidCpf(cleanCpf)) return 'CPF inválido.'
+    if (!birthDate) return 'Data de nascimento é obrigatória.'
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return 'Data de nascimento deve estar no formato YYYY-MM-DD.'
+    if (!gender || !['Masculino','Feminino','Outro','male','female','other'].includes(gender)) return 'Sexo é obrigatório.'
+    if (!userId) return 'Usuário não autenticado.'
+    if (state && !/^[A-Z]{2}$/.test(state)) return 'Estado deve ser a sigla com 2 letras maiúsculas (ex: SP, RJ).'
+    if (cleanPhone && (cleanPhone.length < 10 || cleanPhone.length > 15)) return 'Telefone deve conter entre 10 e 15 dígitos.'
+    return null;
+  }
+
+  /**
+   * Salva as informações do paciente
+   */
+  const savePatientInfo = (): void => {
+    ;(async () => {
+      setSaving(true)
+      setError(null)
+      try {
+        const validationError = validateFields();
+        if (validationError) {
+          setError(validationError);
+          alert(`Erro: ${validationError}`);
+          setSaving(false);
+          return;
+        }
+
+        const userId = getCurrentUserId()
+        // Mapear gênero para os valores esperados pelo backend
+        const mapGender = (gender: string): string => {
+          const genderMap: { [key: string]: string } = {
+            'Masculino': 'male',
+            'Feminino': 'female',
+            'Outro': 'other',
+            'male': 'male',
+            'female': 'female',
+            'other': 'other'
+          }
+          return genderMap[gender] || 'other'
+        }
+
+        // Limpar CPF (remover pontos, traços, etc.) - apenas dígitos
+        const cleanCpf = personalInfo.cpf ? personalInfo.cpf.replace(/\D/g, '') : ''
+        // Limpar telefone (remover formatação)
+        const cleanPhone = personalInfo.telefone ? personalInfo.telefone.replace(/\D/g, '') : undefined
+
+        const payload: any = {
+          name: personalInfo.nomeCompleto,
+          cpf: cleanCpf,
+          email: personalInfo.email || undefined,
+          phone: cleanPhone,
+          birthDate: personalInfo.dataNascimento,
+          gender: mapGender(personalInfo.sexo),
+          neighborhood: personalInfo.bairro || undefined,
+          city: personalInfo.cidade || undefined,
+          state: personalInfo.estado ? personalInfo.estado.trim().toUpperCase() : undefined,
+          medicalHistory: medicalInfo.condicoesPreExistentes || undefined,
+          allergies: medicalInfo.alergias || undefined,
+          userId,
+        }
+        console.log('Payload enviado ao backend:', payload);
+        // Envia para o backend (create/update) e trata resposta
+        if (patientId) {
+          await PatientService.updatePatient(patientId, payload)
+          alert('Informações do paciente atualizadas com sucesso!')
+          // Redirecionar para busca após edição
+          window.location.href = '/dashboard/pacientes/busca'
+        } else {
+          await PatientService.createPatient(payload)
+          alert('Paciente criado com sucesso!')
+          // Limpar dados do formulário após cadastro bem-sucedido
+          clearFormData()
+        }
+      } catch (err: any) {
+        console.error('Erro ao salvar paciente:', err)
+        const errorMessage = err?.response?.data?.message || err?.message || 'Erro ao salvar paciente'
+        setError(errorMessage)
+        alert(`Erro: ${errorMessage}`)
+      } finally {
+        setSaving(false)
+      }
+    })()
   }
 
   /**
@@ -227,79 +305,7 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
     setHistory(history.filter(entry => entry.id !== id))
   }
 
-  /**
-   * Salva as informações do paciente
-   */
-  const savePatientInfo = (): void => {
-    ;(async () => {
-      setSaving(true)
-      setError(null)
-      try {
-        // Validações mínimas removidas conforme solicitado
-        // if (!personalInfo.nomeCompleto || !personalInfo.cpf || !personalInfo.dataNascimento || !personalInfo.sexo) {
-        //   throw new Error('Preencha os campos obrigatórios: nome, CPF, data de nascimento e sexo.')
-        // }
-
-        const userId = getCurrentUserId()
-        if (!userId) {
-          throw new Error('Usuário não autenticado')
-        }
-
-        // Mapear gênero para os valores esperados pelo backend
-        const mapGender = (gender: string): string => {
-          const genderMap: { [key: string]: string } = {
-            'Masculino': 'male',
-            'Feminino': 'female',
-            'Outro': 'other',
-            'male': 'male',
-            'female': 'female',
-            'other': 'other'
-          }
-          return genderMap[gender] || 'other'
-        }
-
-        // Limpar CPF (remover pontos, traços, etc.) - apenas dígitos
-        const cleanCpf = personalInfo.cpf ? personalInfo.cpf.replace(/\D/g, '') : ''
-        
-        // Limpar telefone (remover formatação)
-        const cleanPhone = personalInfo.telefone ? personalInfo.telefone.replace(/\D/g, '') : undefined
-
-        const payload: any = {
-          name: personalInfo.nomeCompleto,
-          cpf: cleanCpf,
-          email: personalInfo.email || undefined,
-          phone: cleanPhone,
-          birthDate: personalInfo.dataNascimento,
-          gender: mapGender(personalInfo.sexo),
-          neighborhood: personalInfo.bairro || undefined,
-          city: personalInfo.cidade || undefined,
-          state: personalInfo.estado || undefined,
-          medicalHistory: medicalInfo.condicoesPreExistentes || undefined,
-          allergies: medicalInfo.alergias || undefined,
-          userId,
-        }
-
-        if (patientId) {
-          await PatientService.updatePatient(patientId, payload)
-          alert('Informações do paciente atualizadas com sucesso!')
-          // Redirecionar para busca após edição
-          window.location.href = '/dashboard/pacientes/busca'
-        } else {
-          await PatientService.createPatient(payload)
-          alert('Paciente criado com sucesso!')
-          // Limpar dados do formulário após cadastro bem-sucedido
-          clearFormData()
-        }
-      } catch (err: any) {
-        console.error('Erro ao salvar paciente:', err)
-        const errorMessage = err?.response?.data?.message || err?.message || 'Erro ao salvar paciente'
-        setError(errorMessage)
-        alert(`Erro: ${errorMessage}`)
-      } finally {
-        setSaving(false)
-      }
-    })()
-  }
+  // ...existing code...
 
   /**
    * Limpa todos os dados do formulário
@@ -488,14 +494,41 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
               <Label htmlFor="estado" className="text-sm font-medium text-gray-700">
                 Estado
               </Label>
-              <Input
+              <select
                 id="estado"
                 value={personalInfo.estado}
                 onChange={(e) => setPersonalInfo({ ...personalInfo, estado: e.target.value })}
-                className="mt-1"
-                placeholder="UF"
-                maxLength={2}
-              />
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Selecione o estado</option>
+                <option value="AC">Acre (AC)</option>
+                <option value="AL">Alagoas (AL)</option>
+                <option value="AP">Amapá (AP)</option>
+                <option value="AM">Amazonas (AM)</option>
+                <option value="BA">Bahia (BA)</option>
+                <option value="CE">Ceará (CE)</option>
+                <option value="DF">Distrito Federal (DF)</option>
+                <option value="ES">Espírito Santo (ES)</option>
+                <option value="GO">Goiás (GO)</option>
+                <option value="MA">Maranhão (MA)</option>
+                <option value="MT">Mato Grosso (MT)</option>
+                <option value="MS">Mato Grosso do Sul (MS)</option>
+                <option value="MG">Minas Gerais (MG)</option>
+                <option value="PA">Pará (PA)</option>
+                <option value="PB">Paraíba (PB)</option>
+                <option value="PR">Paraná (PR)</option>
+                <option value="PE">Pernambuco (PE)</option>
+                <option value="PI">Piauí (PI)</option>
+                <option value="RJ">Rio de Janeiro (RJ)</option>
+                <option value="RN">Rio Grande do Norte (RN)</option>
+                <option value="RS">Rio Grande do Sul (RS)</option>
+                <option value="RO">Rondônia (RO)</option>
+                <option value="RR">Roraima (RR)</option>
+                <option value="SC">Santa Catarina (SC)</option>
+                <option value="SP">São Paulo (SP)</option>
+                <option value="SE">Sergipe (SE)</option>
+                <option value="TO">Tocantins (TO)</option>
+              </select>
             </div>
 
             {/* Sexo */}
@@ -531,13 +564,22 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
               <Label htmlFor="tipoSanguineo" className="text-sm font-medium text-gray-700">
                 Tipo Sanguíneo
               </Label>
-              <Input
+              <select
                 id="tipoSanguineo"
                 value={medicalInfo.tipoSanguineo}
                 onChange={(e) => setMedicalInfo({ ...medicalInfo, tipoSanguineo: e.target.value })}
-                className="mt-1"
-                placeholder="Ex: O+, A-, B+, AB-"
-              />
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Selecione o tipo sanguíneo</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+              </select>
             </div>
 
             {/* Alergias */}
