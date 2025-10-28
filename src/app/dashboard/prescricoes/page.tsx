@@ -880,7 +880,7 @@ export default function PrescricoesPage() {
         </Card>
 
         {/* Ações rápidas - Gestão e Impressão */}
-        {prescriptions.length > 0 && (
+        {prescriptions.length >= 0 && (
           <Card className="p-4">
             <div className="flex items-center justify-between">
               {/* Lado esquerdo - Botão de adicionar */}
