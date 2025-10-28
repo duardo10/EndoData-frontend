@@ -1532,7 +1532,7 @@ export default function ReceitasPage() {
                 {!hasMoreReceipts && !loading.fetching && receipts.length > 0 && (
                   <tr>
                     <td colSpan={7} className="text-center py-4 text-sm text-gray-500">
-                      ✅ Todas as {totalReceipts} receitas foram carregadas
+                      Todas as {totalReceipts} receitas foram carregadas
                     </td>
                   </tr>
                 )}
