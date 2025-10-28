@@ -55,14 +55,19 @@ export default function Configuracoes(): React.ReactElement {
     }
     setSaving(true);
     try {
-      await updateUserProfile({
+      const response = await updateUserProfile({
         name: profile.name,
         email: profile.email,
         phone: profile.phone,
         crm: profile.crm,
         especialidade: profile.especialidade,
       });
-      setSuccess("Perfil atualizado com sucesso!");
+      // Se o backend retornar 204, exibe mensagem específica
+      if (response && response.status === 204) {
+        setSuccess("Nenhuma alteração detectada.");
+      } else {
+        setSuccess("Perfil atualizado com sucesso!");
+      }
     } catch (err: any) {
       setError(err?.message || "Erro ao atualizar perfil.");
     } finally {
@@ -85,9 +90,13 @@ export default function Configuracoes(): React.ReactElement {
     }
     setSaving(true);
     try {
-      await updateUserPassword({ password: profile.password, confirmPassword: profile.confirmPassword });
-      setSuccess("Senha alterada com sucesso!");
-      setProfile((prev) => ({ ...prev, password: "", confirmPassword: "" }));
+      const response = await updateUserPassword({ password: profile.password, confirmPassword: profile.confirmPassword });
+      if (response && response.status === 204) {
+        setSuccess("Nenhuma alteração detectada.");
+      } else {
+        setSuccess("Senha alterada com sucesso!");
+        setProfile((prev) => ({ ...prev, password: "", confirmPassword: "" }));
+      }
     } catch (err: any) {
       setError(err?.message || "Erro ao alterar senha.");
     } finally {
