@@ -33,31 +33,69 @@ export function CreateReceiptModal({
     status: ReceiptStatus.PENDING,
     items: [{ description: '', quantity: 1, unitPrice: 0 }]
   })
-  const [patients, setPatients] = useState<PatientType[]>([])
-  const [loadingPatients, setLoadingPatients] = useState(true)
+  // Autocomplete patient search states
+  const [patientSearchTerm, setPatientSearchTerm] = useState('');
+  const [patientSearchResults, setPatientSearchResults] = useState<PatientType[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<PatientType | null>(null);
+  const [isSearchingPatients, setIsSearchingPatients] = useState(false);
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false);
 
-  // Carregar pacientes da API
+  // Debounced search effect
   useEffect(() => {
-    const fetchPatients = async () => {
-      try {
-        setLoadingPatients(true)
-        const data = await PatientService.getPatients()
-        setPatients(data.patients || [])
-      } catch (error) {
-        console.error('Erro ao buscar pacientes:', error)
-        // Fallback para dados mockados  
-        setPatients([
-          { id: '3041a16e-8023-45a3-be41-96d5170d0644', name: 'João da Silva', email: 'joao.silva@email.com', cpf: '11144477735' }
-        ])
-      } finally {
-        setLoadingPatients(false)
+    const timeoutId = setTimeout(() => {
+      if (patientSearchTerm && !selectedPatient) {
+        searchPatients(patientSearchTerm);
+        setShowPatientDropdown(true);
       }
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [patientSearchTerm, selectedPatient]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.patient-autocomplete')) {
+        setShowPatientDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Search patients from API
+  const searchPatients = async (searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      setPatientSearchResults([]);
+      return;
     }
-    
-    if (isOpen) {
-      fetchPatients()
+    setIsSearchingPatients(true);
+    try {
+      const response = await PatientService.searchPatients(searchTerm);
+      setPatientSearchResults(response.patients || []);
+    } catch (error) {
+      setPatientSearchResults([]);
+    } finally {
+      setIsSearchingPatients(false);
     }
-  }, [isOpen])
+  };
+
+  // Select patient from dropdown
+  const selectPatient = (patient: PatientType) => {
+    setSelectedPatient(patient);
+    setPatientSearchTerm(patient.name);
+    setShowPatientDropdown(false);
+    setFormData(prev => ({ ...prev, patientId: patient.id }));
+  };
+
+  // Clear patient selection
+  const clearPatientSelection = () => {
+    setSelectedPatient(null);
+    setPatientSearchTerm('');
+    setPatientSearchResults([]);
+    setShowPatientDropdown(false);
+    setFormData(prev => ({ ...prev, patientId: '' }));
+  };
 
   const addItem = () => {
     setFormData(prev => ({
@@ -141,24 +179,57 @@ export function CreateReceiptModal({
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Seleção do Paciente */}
-          <div className="space-y-2">
+          {/* Autocomplete Paciente */}
+          <div className="space-y-2 relative patient-autocomplete">
             <Label htmlFor="patient">Paciente *</Label>
-            <select
+            <Input
               id="patient"
-              value={formData.patientId}
-              onChange={(e) => setFormData(prev => ({ ...prev, patientId: e.target.value }))}
-              disabled={loadingPatients}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              type="text"
+              placeholder="Digite o nome do paciente"
+              value={patientSearchTerm}
+              onChange={e => {
+                setPatientSearchTerm(e.target.value);
+                if (!e.target.value) clearPatientSelection();
+              }}
+              onFocus={() => {
+                if (patientSearchResults.length > 0) setShowPatientDropdown(true);
+              }}
+              className="w-full pr-10"
               required
-            >
-              <option value="">{loadingPatients ? "Carregando..." : "Selecione um paciente"}</option>
-              {patients.map((patient) => (
-                <option key={patient.id} value={patient.id}>
-                  {patient.name} ({patient.cpf})
-                </option>
-              ))}
-            </select>
+            />
+            {selectedPatient && (
+              <button
+                onClick={clearPatientSelection}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                type="button"
+              >
+                ✕
+              </button>
+            )}
+            {isSearchingPatients && (
+              <div className="absolute right-8 top-1/2 transform -translate-y-1/2">
+                <span className="animate-spin inline-block w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full"></span>
+              </div>
+            )}
+            {showPatientDropdown && patientSearchResults.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                {patientSearchResults.map(patient => (
+                  <button
+                    key={patient.id}
+                    onClick={() => selectPatient(patient)}
+                    className="w-full px-4 py-2 text-left hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
+                    type="button"
+                  >
+                    {patient.name} ({patient.cpf})
+                  </button>
+                ))}
+              </div>
+            )}
+            {selectedPatient && (
+              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
+                <span className="text-green-700">Selecionado: {selectedPatient.name} ({selectedPatient.cpf})</span>
+              </div>
+            )}
           </div>
 
           {/* Status */}
