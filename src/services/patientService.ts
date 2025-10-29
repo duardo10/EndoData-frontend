@@ -10,9 +10,16 @@
  * @example
  * const pacientes = await PatientService.getAllPatients();
  *
+ * // Edge case: Se o backend retornar erro 404, o hook exibe lista vazia.
+ * // Limitação: Não há suporte a busca por pacientes inativos.
+ * // Sugestão de melhoria: Adicionar filtro para pacientes inativos e exportação em CSV.
+ *
  * @see https://docs.endodata.com/services/patientService
+ * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
  * @remarks
  * Ideal para telas de listagem, cadastro, edição e busca de pacientes.
+ *
+ * @todo Adicionar suporte a busca por pacientes inativos e exportação de dados.
  */
 
 import api from '@/lib/api'
