@@ -17,10 +17,17 @@
  *   deleteReceipt
  * } = useReceitas();
  *
+ * // Edge case: Receitas duplicadas podem ser criadas se o usuário clicar várias vezes no botão de salvar.
+ * // Limitação: Não há verificação automática de duplicidade de receitas.
+ * // Sugestão de melhoria: Adicionar debounce no submit e validação de duplicidade.
+ *
  * @see https://docs.endodata.com/hooks/useReceitas
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
  * @remarks
  * Ideal para telas de listagem, cadastro e edição de receitas médicas.
  * Inclui tratamento de erros, loading, paginação e filtros avançados.
+ *
+ * @todo Adicionar exportação de receitas em PDF e integração com sistemas externos.
  */
 
 'use client'
