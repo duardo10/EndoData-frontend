@@ -27,6 +27,14 @@ export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
+
+/**
+ * Componente Badge estilizado para exibir rótulos ou status.
+ *
+ * @description Badge visual com variantes de cor, usado para indicar status, categorias ou informações rápidas.
+ * @param {BadgeProps} props - Propriedades do badge (classe, variante, etc)
+ * @returns {JSX.Element} Elemento visual de badge
+ */
 function Badge({ className, variant, ...props }: BadgeProps) {
   return (
     <div className={cn(badgeVariants({ variant }), className)} {...props} />
