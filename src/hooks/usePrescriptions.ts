@@ -1,12 +1,26 @@
 /**
- * Hook personalizado para gerenciamento de Prescrições Médicas
- * 
- * @description Hook React customizado que encapsula toda a lógica
- * de estado e operações CRUD para prescrições médicas. Fornece uma
- * interface limpa e reutilizável para componentes React.
- * 
+ * Hook personalizado para gerenciamento completo de Prescrições Médicas.
+ *
+ * @description Este hook React encapsula toda a lógica de estado, operações CRUD e integração com a API de prescrições médicas.
+ * Fornece uma interface limpa, reutilizável e segura para componentes React que precisam manipular prescrições.
+ *
  * @author EndoData Team
  * @since 1.0.0
+ *
+ * @example
+ * const {
+ *   prescriptions,
+ *   loading,
+ *   error,
+ *   createPrescription,
+ *   updatePrescription,
+ *   deletePrescription
+ * } = usePrescriptions();
+ *
+ * @see https://docs.endodata.com/hooks/usePrescriptions
+ * @remarks
+ * Ideal para telas de listagem, cadastro e edição de prescrições médicas.
+ * Inclui tratamento de erros, loading, paginação e filtros avançados.
  */
 
 'use client'

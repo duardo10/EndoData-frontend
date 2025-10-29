@@ -1,9 +1,18 @@
 /**
  * Serviço de Pacientes - EndoData Frontend
- * 
- * @description Serviço para comunicação com a API de pacientes
+ *
+ * @description Serviço para comunicação com a API de pacientes, incluindo operações CRUD, busca, filtros e paginação.
+ * Oferece integração completa com backend, tratamento de erros e validação de dados.
+ *
  * @author EndoData Team
  * @since 1.0.0
+ *
+ * @example
+ * const pacientes = await PatientService.getAllPatients();
+ *
+ * @see https://docs.endodata.com/services/patientService
+ * @remarks
+ * Ideal para telas de listagem, cadastro, edição e busca de pacientes.
  */
 
 import api from '@/lib/api'

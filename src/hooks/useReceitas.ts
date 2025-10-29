@@ -1,12 +1,26 @@
 /**
- * Hook personalizado para gerenciamento de Receitas Médicas
- * 
- * @description Hook React customizado que encapsula toda a lógica
- * de estado e operações CRUD para receitas médicas. Fornece uma
- * interface limpa e reutilizável para componentes React.
- * 
+ * Hook personalizado para gerenciamento completo de Receitas Médicas.
+ *
+ * @description Este hook React encapsula toda a lógica de estado, operações CRUD e integração com a API de receitas médicas.
+ * Fornece uma interface limpa, reutilizável e segura para componentes React que precisam manipular receitas.
+ *
  * @author EndoData Team
  * @since 1.0.0
+ *
+ * @example
+ * const {
+ *   receipts,
+ *   loading,
+ *   error,
+ *   createReceipt,
+ *   updateReceipt,
+ *   deleteReceipt
+ * } = useReceitas();
+ *
+ * @see https://docs.endodata.com/hooks/useReceitas
+ * @remarks
+ * Ideal para telas de listagem, cadastro e edição de receitas médicas.
+ * Inclui tratamento de erros, loading, paginação e filtros avançados.
  */
 
 'use client'

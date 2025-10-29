@@ -2,8 +2,17 @@ import api from '@/lib/api'
 import { Receipt, ReceiptFilters, MonthlyReceiptReport, CreateReceiptInput, UpdateReceiptInput } from '@/types/receipt'
 
 /**
- * Service para gerenciar operações com receitas (receipts)
- * Integra com o backend NestJS para todas as operações CRUD
+ * Serviço para gerenciar operações com receitas (receipts)
+ *
+ * @description Integra com o backend NestJS para todas as operações CRUD, filtros, paginação e exportação de receitas médicas.
+ * Oferece tratamento de erros, validação de dados e integração segura.
+ *
+ * @example
+ * const receitas = await ReceiptService.getReceipts();
+ *
+ * @see https://docs.endodata.com/services/receiptService
+ * @remarks
+ * Ideal para telas de listagem, cadastro, edição e exportação de receitas médicas.
  */
 export class ReceiptService {
   

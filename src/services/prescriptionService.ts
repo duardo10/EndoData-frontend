@@ -1,11 +1,18 @@
 /**
  * Serviço de Prescrições Médicas - EndoData Frontend
- * 
- * @description Serviço para comunicação com a API de prescrições médicas.
- * Oferece operações CRUD completas e integração perfeita com o backend NestJS.
- * 
+ *
+ * @description Serviço para comunicação com a API de prescrições médicas, incluindo operações CRUD, filtros, paginação e integração com backend NestJS.
+ * Oferece tratamento de erros, validação de dados e integração segura.
+ *
  * @author EndoData Team
  * @since 1.0.0
+ *
+ * @example
+ * const prescricoes = await PrescriptionService.getAllPrescriptions();
+ *
+ * @see https://docs.endodata.com/services/prescriptionService
+ * @remarks
+ * Ideal para telas de listagem, cadastro, edição e busca de prescrições médicas.
  */
 
 import api from '@/lib/api'
