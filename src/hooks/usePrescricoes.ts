@@ -17,10 +17,17 @@
  *   deletePrescription
  * } = usePrescricoes();
  *
+ * // Edge case: Se a API retornar erro 500, o hook exibe mensagem genérica. Sugestão: detalhar erro para o usuário.
+ * // Limitação: Não há suporte a busca por prescrições arquivadas.
+ * // Sugestão de melhoria: Adicionar filtro para prescrições arquivadas e exportação em XLSX.
+ *
  * @see https://docs.endodata.com/hooks/usePrescricoes
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error
  * @remarks
  * Ideal para telas de listagem, cadastro e edição de prescrições médicas.
  * Inclui tratamento de erros, loading, paginação e filtros avançados.
+ *
+ * @todo Adicionar suporte a busca por prescrições arquivadas e exportação de dados.
  */
 
 import { useState, useEffect, useCallback } from 'react'
