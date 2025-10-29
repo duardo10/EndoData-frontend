@@ -28,17 +28,25 @@ export default function Relatorios(): React.ReactElement {
   const [loading, setLoading] = useState(true)
   const { user, loading: loadingUser } = useUserProfile()
 
-  useEffect(() => {
+  // Função para buscar dados do dashboard do banco JPA
+  const fetchDashboardData = async () => {
     setLoading(true)
-    Promise.all([
-      getDashboardMetrics(),
-      getWeeklyPatientsChart(12),
-      getTopMedications(4, 6),
-    ]).then(([metricsData, weeklyData, medsData]) => {
+    try {
+      const [metricsData, weeklyData, medsData] = await Promise.all([
+        getDashboardMetrics(),
+        getWeeklyPatientsChart(12),
+        getTopMedications(4, 6),
+      ])
       setMetrics(metricsData)
       setWeeklyPatients(weeklyData)
       setTopMedications(medsData)
-    }).finally(() => setLoading(false))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDashboardData()
   }, [])
 
 
@@ -83,6 +91,10 @@ export default function Relatorios(): React.ReactElement {
               </Button>
               <Button variant="secondary" className="gap-2">
                 <FileDown className="w-4 h-4" /> Exportar
+              </Button>
+              <Button variant="ghost" className="gap-2" onClick={fetchDashboardData} disabled={loading}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582M20 20v-5h-.581M5.635 19.364A9 9 0 104.582 9.582" /></svg>
+                Atualizar Dados
               </Button>
             </div>
           </div>
@@ -134,7 +146,8 @@ export default function Relatorios(): React.ReactElement {
                   <div className="flex items-center gap-2 mb-2">
                     <Badge variant="secondary">Financeiro</Badge>
                   </div>
-                  <CardTitle className="text-lg text-gray-700">Receita do Mês</CardTitle>
+                  <CardTitle className="text-lg text-gray-700">Receita do Mês (apenas receitas pagas)</CardTitle>
+                  <CardDescription className="text-xs text-gray-500 mt-1">Exibe apenas o valor das receitas com status <b>"pago"</b> no mês atual.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <span className="text-4xl font-bold text-[#2074E9]">R$ {metrics.monthlyRevenue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
