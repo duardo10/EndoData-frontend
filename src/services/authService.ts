@@ -28,9 +28,16 @@
  * @example
  * await authService.login({ email: 'user@exemplo.com', senha: '123456' });
  *
+ * // Edge case: Se o token JWT expirar, o usuário será deslogado automaticamente.
+ * // Limitação: Não há suporte a autenticação via OAuth2.
+ * // Sugestão de melhoria: Adicionar integração com provedores OAuth2 e autenticação multifator.
+ *
  * @see https://docs.endodata.com/services/authService
+ * @see https://datatracker.ietf.org/doc/html/rfc6749
  * @remarks
  * Ideal para telas de login, cadastro e gerenciamento de sessão do usuário.
+ *
+ * @todo Adicionar suporte a OAuth2 e autenticação multifator.
  */
 
 /**
