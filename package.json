@@ -29,6 +29,7 @@
     "react-dom": "^18",
     "react-hook-form": "^7.65.0",
     "react-hot-toast": "^2.6.0",
+    "react-markdown": "^10.1.0",
     "recharts": "^2.9.0",
     "tailwind-merge": "^2.4.0",
     "zod": "^4.1.12",
