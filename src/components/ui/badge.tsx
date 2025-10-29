@@ -28,12 +28,23 @@ export interface BadgeProps
     VariantProps<typeof badgeVariants> {}
 
 
+
 /**
- * Componente Badge estilizado para exibir rótulos ou status.
+ * Componente Badge estilizado para exibir rótulos, status ou categorias de forma visual e acessível.
  *
- * @description Badge visual com variantes de cor, usado para indicar status, categorias ou informações rápidas.
- * @param {BadgeProps} props - Propriedades do badge (classe, variante, etc)
+ * @component
+ * @param {BadgeProps} props - Propriedades do badge, incluindo classe CSS, variante de cor e atributos do div.
  * @returns {JSX.Element} Elemento visual de badge
+ *
+ * @example
+ * <Badge variant="destructive">Erro</Badge>
+ * <Badge variant="secondary" className="ml-2">Novo</Badge>
+ *
+ * @remarks
+ * Use para destacar informações rápidas, status de entidades ou categorias em listas e cards.
+ * Suporta variantes de cor para diferentes contextos (default, secondary, destructive, outline).
+ *
+ * @see https://ui.endodata.com/components/badge
  */
 function Badge({ className, variant, ...props }: BadgeProps) {
   return (
