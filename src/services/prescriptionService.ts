@@ -10,9 +10,16 @@
  * @example
  * const prescricoes = await PrescriptionService.getAllPrescriptions();
  *
+ * // Edge case: Se o backend retornar erro 403, o serviço bloqueia acesso e exibe mensagem de permissão negada.
+ * // Limitação: Não há suporte a busca por prescrições expiradas.
+ * // Sugestão de melhoria: Adicionar filtro para prescrições expiradas e exportação em PDF.
+ *
  * @see https://docs.endodata.com/services/prescriptionService
+ * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
  * @remarks
  * Ideal para telas de listagem, cadastro, edição e busca de prescrições médicas.
+ *
+ * @todo Adicionar suporte a busca por prescrições expiradas e exportação de dados.
  */
 
 import api from '@/lib/api'
