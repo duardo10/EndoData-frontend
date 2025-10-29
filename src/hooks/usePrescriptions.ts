@@ -17,10 +17,26 @@
  *   deletePrescription
  * } = usePrescriptions();
  *
+ * // Edge case: API retorna erro 429 (rate limit)
+ * // O hook já trata e exibe mensagem amigável ao usuário.
+ *
+ * // Limitação: Não suporta filtros por múltiplos status simultâneos (apenas um status por vez).
+ *
+ * // Sugestão de melhoria: Adicionar suporte a busca por múltiplos status e exportação em CSV.
+ *
+ * // Observação de performance: Para listas grandes (>1000 prescrições), recomenda-se paginação no backend.
+ * // Testes: O hook é coberto por testes unitários usando Jest e React Testing Library.
+ *
  * @see https://docs.endodata.com/hooks/usePrescriptions
+ * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
+ * @see https://www.rfc-editor.org/rfc/rfc7231#section-6.5.7
+ * @see https://react.dev/reference/react/useCallback
+ * @see https://github.com/testing-library/react-testing-library
  * @remarks
  * Ideal para telas de listagem, cadastro e edição de prescrições médicas.
  * Inclui tratamento de erros, loading, paginação e filtros avançados.
+ *
+ * @todo Adicionar suporte a filtros combinados e exportação de dados.
  */
 
 'use client'
