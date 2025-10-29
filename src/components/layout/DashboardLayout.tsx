@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
+import { UserProfile } from '@/components/ui/UserProfile'
 
 /**
  * Props do componente DashboardLayout
@@ -47,8 +48,8 @@ const menuItems = [
   },
   {
     icon: FileText,
-    label: 'Prescrição',
-    href: '/dashboard/prescricao',
+    label: 'Prescrições',
+    href: '/dashboard/prescricoes',
   },
   {
     icon: Receipt,
@@ -191,14 +192,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps): React.React
             </Button>
 
             {/* Avatar do usuário */}
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-700">DJ</span>
-              </div>
-              <span className="hidden md:block text-sm font-medium text-gray-700">
-                Doutor João
-              </span>
-            </div>
+            <UserProfile 
+              showName 
+              size="md"
+              className="hidden md:flex"
+            />
           </div>
         </header>
 

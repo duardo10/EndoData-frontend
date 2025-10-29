@@ -29,6 +29,7 @@
  * Interface para dados de cadastro de usuário médico
  */
 export interface RegisterData {
+  nome?: string
   cpf: string
   email: string
   crm: string
@@ -67,7 +68,7 @@ export interface AuthResponse {
 /**
  * Configuração base da API
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
 
 /**
  * Modo de simulação para desenvolvimento
@@ -151,23 +152,50 @@ class AuthService {
         }
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/users`, {
+      const requestData = {
+        nome: userData.nome?.trim() || 'Médico', // Nome padrão se não fornecido
+        cpf: userData.cpf.replace(/\D/g, ''), // Remove formatação
+        email: userData.email.trim().toLowerCase(),
+        crm: userData.crm.toUpperCase().trim(),
+        senha: userData.senha
+      }
+
+      console.log('📤 Dados enviados para o backend:', requestData)
+
+      const response = await fetch(`${API_BASE_URL}/users`, {
         method: 'POST',
         headers: getDefaultHeaders(),
-        body: JSON.stringify({
-          cpf: userData.cpf.replace(/\D/g, ''), // Remove formatação
-          email: userData.email.trim().toLowerCase(),
-          crm: userData.crm.toUpperCase().trim(),
-          password: userData.senha
-        })
+        body: JSON.stringify(requestData)
       })
 
       const data = await response.json()
+      console.log('📥 Resposta do backend:', { status: response.status, data })
 
       if (!response.ok) {
+        // Tratamento de erros mais amigável
+        let errorMessage = 'Erro ao criar conta'
+        
+        if (response.status === 400) {
+          // Mostra a mensagem específica do backend se disponível
+          if (data.message) {
+            errorMessage = data.message
+          } else if (data.errors && data.errors.length > 0) {
+            errorMessage = data.errors.join(', ')
+          } else {
+            errorMessage = 'Dados inválidos. Verifique os campos preenchidos.'
+          }
+        } else if (response.status === 409) {
+          errorMessage = 'Email, CPF ou CRM já cadastrado. Tente fazer login.'
+        } else if (response.status === 404) {
+          errorMessage = 'Serviço temporariamente indisponível. Tente novamente.'
+        } else if (data.message) {
+          // Se o backend retornar uma mensagem específica, use ela
+          errorMessage = data.message
+        }
+        
         return {
           success: false,
-          message: data.message || 'Erro ao criar conta',
+          message: errorMessage,
           errors: data.errors || []
         }
       }
@@ -188,7 +216,7 @@ class AuthService {
       console.error('Erro no registro:', error)
       return {
         success: false,
-        message: 'Erro de conexão. Tente novamente.',
+        message: 'Erro de conexão. Verifique sua internet e tente novamente.',
         errors: ['NETWORK_ERROR']
       }
     }
@@ -202,7 +230,7 @@ class AuthService {
    */
   async login(loginData: LoginData): Promise<AuthResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: getDefaultHeaders(),
         body: JSON.stringify({
@@ -298,10 +326,10 @@ class AuthService {
       errors.push('Email inválido')
     }
 
-    // Validação CRM
-    if (!this.isValidCRM(userData.crm)) {
-      errors.push('CRM inválido')
-    }
+    // Validação CRM - TEMPORARIAMENTE DESABILITADA
+    // if (!this.isValidCRM(userData.crm)) {
+    //   errors.push('CRM inválido')
+    // }
 
     // Validação Senha
     if (userData.senha.length < 8) {

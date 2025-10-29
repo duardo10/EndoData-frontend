@@ -173,7 +173,11 @@ export default function LoginForm() {
           <span className="font-roboto text-[14px] leading-[20px] font-normal text-[#171A1F]">
             Não tem uma conta?{' '}
           </span>
-          <button type="button" className="font-roboto text-[14px] leading-[20px] font-normal text-[#2074E9] hover:underline transition-all">
+          <button 
+            type="button" 
+            onClick={() => router.push('/cadastro')}
+            className="font-roboto text-[14px] leading-[20px] font-normal text-[#2074E9] hover:underline transition-all"
+          >
             Criar uma conta
           </button>
         </div>

@@ -147,6 +147,7 @@ export default function CadastroPage() {
   const router = useRouter()
   
   const [formData, setFormData] = useState<RegisterData>({
+    nome: '',
     cpf: '',
     email: '',
     crm: '',
@@ -165,7 +166,7 @@ export default function CadastroPage() {
    * quando o usuário digita nos campos de entrada. Utiliza spread operator
    * para manter a imutabilidade do estado.
    * 
-   * @param {keyof FormData} field - Nome do campo a ser atualizado
+   * @param {keyof RegisterData} field - Nome do campo a ser atualizado
    * @param {string} value - Novo valor do campo
    * 
    * @example
@@ -182,7 +183,7 @@ export default function CadastroPage() {
    * - Sanitização de entrada será implementada
    * - Validação de tipo TypeScript
    */
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  const handleInputChange = (field: keyof RegisterData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -226,47 +227,61 @@ export default function CadastroPage() {
    * ```
    */
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Reset de estados
-    setError('')
-    setSuccess('')
-    setIsLoading(true)
-    
+    e.preventDefault();
+
+    setError('');
+    setSuccess('');
+    setIsLoading(true);
+
     try {
-      // Chama o serviço de autenticação
-      const result = await authService.register(formData)
-      
+      const result = await authService.register(formData);
+
       if (result.success) {
-        setSuccess(result.message)
-        
-        // Limpa formulário
+        setSuccess(result.message);
         setFormData({
+          nome: '',
           cpf: '',
           email: '',
           crm: '',
           senha: '',
           confirmarSenha: ''
-        })
-        
-        // Redireciona para dashboard após 2 segundos
+        });
         setTimeout(() => {
-          router.push('/dashboard')
-        }, 2000)
-        
+          router.push('/');
+        }, 2000);
       } else {
-        setError(result.message)
-        if (result.errors && result.errors.length > 0) {
-          setError(result.errors.join(', '))
+        // Erros conhecidos de campos repetidos
+        const msg = (result.message || '').toLowerCase();
+        if (result.errors && result.errors.includes('NETWORK_ERROR')) {
+          setError('Servidor indisponível, tente novamente mais tarde.');
+        } else if (msg.includes('e-mail já cadastrado') || msg.includes('email já cadastrado')) {
+          setError('E-mail já cadastrado. Tente fazer login ou recuperar a senha.');
+        } else if (msg.includes('cpf já cadastrado')) {
+          setError('CPF já cadastrado. Tente fazer login ou recuperar a senha.');
+        } else if (msg.includes('crm já cadastrado')) {
+          setError('CRM já cadastrado. Tente fazer login ou recuperar a senha.');
+        } else if (result.errors && result.errors.length > 0) {
+          setError(result.errors.join(', '));
+        } else if (result.message) {
+          setError(result.message);
+        } else {
+          setError('Erro ao registrar. Tente novamente.');
         }
       }
-      
-    } catch (error) {
-      console.error('Erro no cadastro:', error)
-      setError('Erro inesperado. Tente novamente.')
-      
+    } catch (error: any) {
+      // Captura erros de validação lançados pelo frontend
+      if (typeof error === 'string') {
+        setError(error);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Erro inesperado. Tente novamente.');
+      }
+      // Não exibe NETWORK_ERROR se for erro de validação local
+      // Apenas loga o erro para debug
+      console.error('Erro no cadastro:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -280,11 +295,15 @@ export default function CadastroPage() {
           <span className="text-xl font-bold text-blue-600">EndoData</span>
         </div>
         
-        {/* Ícone de logout no canto direito */}
-        <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200 p-1">
+        {/* Botão de voltar para login */}
+        <button 
+          onClick={() => router.push('/')}
+          className="text-gray-500 hover:text-gray-700 transition-colors duration-200 p-1 flex items-center space-x-1"
+        >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
+          <span className="text-sm">Voltar</span>
         </button>
       </div>
 
@@ -336,6 +355,23 @@ export default function CadastroPage() {
         {/* Formulário */}
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
+            {/* Nome */}
+            <div className="textbox">
+              <Label htmlFor="nome" className="label block text-sm font-medium text-gray-700 mb-1">
+                Nome Completo
+              </Label>
+              <Input
+                id="nome"
+                name="nome"
+                type="text"
+                placeholder="Seu nome completo"
+                value={formData.nome}
+                onChange={(e) => handleInputChange('nome', e.target.value)}
+                className="textbox-input w-full h-[45px] px-3 font-[Open_Sans] text-sm font-normal bg-white rounded-md border border-[#DEE1E6] outline-none transition-colors hover:border-[#DEE1E6] focus:border-[#DEE1E6] focus:ring-0 disabled:text-[#565D6D] disabled:bg-white disabled:border-[#DEE1E6]"
+                required
+              />
+            </div>
+
             {/* CPF */}
             <div className="textbox">
               <Label htmlFor="cpf" className="label block text-sm font-medium text-gray-700 mb-1">
@@ -443,6 +479,20 @@ export default function CadastroPage() {
             </Button>
           </div>
         </form>
+
+        {/* Link para voltar ao login */}
+        <div className="text-center mt-6">
+          <span className="text-sm text-gray-600">
+            Já tem uma conta?{' '}
+          </span>
+          <button 
+            type="button"
+            onClick={() => router.push('/')}
+            className="text-sm text-blue-600 hover:underline transition-all"
+          >
+            Fazer login
+          </button>
+        </div>
         </div>
       </div>
     </div>
