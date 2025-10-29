@@ -10,9 +10,16 @@ import { Receipt, ReceiptFilters, MonthlyReceiptReport, CreateReceiptInput, Upda
  * @example
  * const receitas = await ReceiptService.getReceipts();
  *
+ * // Edge case: Se o backend retornar erro 422, o serviço exibe mensagem de dados inválidos.
+ * // Limitação: Não há suporte a exportação de receitas em XLSX.
+ * // Sugestão de melhoria: Adicionar exportação em XLSX e integração com sistemas de farmácia.
+ *
  * @see https://docs.endodata.com/services/receiptService
+ * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
  * @remarks
  * Ideal para telas de listagem, cadastro, edição e exportação de receitas médicas.
+ *
+ * @todo Adicionar exportação de receitas em XLSX e integração com sistemas externos.
  */
 export class ReceiptService {
   
