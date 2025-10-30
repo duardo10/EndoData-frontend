@@ -1,8 +1,6 @@
-"use client";
-import React from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { HelpLayout } from '@/components/help/HelpLayout';
-import { KnowledgeBase } from '@/components/help/KnowledgeBase';
+import { FAQ } from '@/components/help/FAQ';
 import { Book, HelpCircle, Code, FileText, FileDown } from 'lucide-react';
 
 const sections = [
@@ -13,16 +11,16 @@ const sections = [
   { id: 'downloads', title: 'Downloads', description: 'Manuais e documentos', href: '/dashboard/ajuda/downloads', icon: <FileDown className="h-5 w-5" /> },
 ];
 
-const articles = [
-  { id: '1', title: 'Gestão de Pacientes', description: 'Como cadastrar e gerenciar pacientes no sistema', content: '# Gestão de Pacientes...', category: 'Pacientes' },
-  { id: '2', title: 'Sistema de Prescrições', description: 'Como criar e gerenciar prescrições médicas', content: '# Sistema de Prescrições...', category: 'Prescrições' },
+const faqItems = [
+  { question: 'Como cadastrar um novo paciente?', answer: 'Para cadastrar um novo paciente, acesse o menu "Pacientes", clique no botão "Novo Paciente" e preencha o formulário com os dados necessários.', category: 'Pacientes' },
+  { question: 'Como criar uma nova prescrição?', answer: 'Para criar uma nova prescrição, acesse o menu "Prescrições", selecione um paciente e clique em "Nova Prescrição". Preencha os medicamentos e instruções necessárias.', category: 'Prescrições' },
 ];
 
-export default function AjudaDashboardPage(): React.ReactElement {
+export default function FAQDashboardPage(): React.ReactElement {
   return (
     <DashboardLayout>
-      <HelpLayout sections={sections} activeSection="knowledge-base">
-        <KnowledgeBase articles={articles} />
+      <HelpLayout sections={sections} activeSection="faq">
+        <FAQ items={faqItems} />
       </HelpLayout>
     </DashboardLayout>
   );
