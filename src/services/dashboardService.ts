@@ -1,4 +1,3 @@
-
 import api from '@/lib/api'
 
 
@@ -67,5 +66,18 @@ export async function getWeeklyPatientsChart(weeks = 12) {
  */
 export async function getTopMedications(limit = 4, period = 6) {
   const { data } = await api.get('/dashboard/top-medications', { params: { limit, period } })
-  return data
+  return {
+    ...data,
+    medications: (data.medications || []).map((med: RawMedication) => ({
+      name: med.medicationName,
+      totalPrescriptions: med.prescriptionCount,
+      percent: med.percentage
+    }))
+  }
 }
+
+type RawMedication = {
+  medicationName: string;
+  prescriptionCount: number;
+  percentage: number;
+};

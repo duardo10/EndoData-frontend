@@ -28,6 +28,13 @@ export default function Relatorios(): React.ReactElement {
   const [loading, setLoading] = useState(true)
   const { user, loading: loadingUser } = useUserProfile()
 
+  // Mapeia os dados do backend para o formato esperado pelo PieChart
+  const pieData = (topMedications?.medications || []).map(med => ({
+    name: med.name,
+    value: med.totalPrescriptions,
+    percentage: med.percent
+  }))
+
   // Função para buscar dados do dashboard do banco JPA
   const fetchDashboardData = async () => {
     setLoading(true)
@@ -185,24 +192,28 @@ export default function Relatorios(): React.ReactElement {
             </CardHeader>
             <CardContent>
               <div className="h-64 flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={topMedications?.medications || []}
-                      dataKey="totalPrescriptions"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label
-                    >
-                      {(topMedications?.medications || []).map((entry, idx) => (
-                        <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+                {(pieData.length === 0 || pieData.every(item => item.value === 0)) ? (
+                  <span className="text-gray-500 text-lg">Sem dados para exibir</span>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label
+                      >
+                        {pieData.map((entry, idx) => (
+                          <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>
