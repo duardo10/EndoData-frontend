@@ -75,7 +75,7 @@ const menuItems = [
   {
     icon: HelpCircle,
     label: 'Ajuda',
-    href: 'dashboard/ajuda',
+    href: '/dashboard/ajuda',
   },
 ]
 
