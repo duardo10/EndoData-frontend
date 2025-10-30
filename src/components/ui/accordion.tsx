@@ -23,14 +23,16 @@ export function AccordionItem({ children }: AccordionItemProps) {
 export interface AccordionTriggerProps {
   className?: string;
   children: React.ReactNode;
+  open: boolean;
+  onClick: () => void;
 }
 
-export function AccordionTrigger({ children, className }: AccordionTriggerProps) {
-  const [open, setOpen] = React.useState(false);
+export function AccordionTrigger({ children, className, open, onClick }: AccordionTriggerProps) {
   return (
     <button
       className={className + ' w-full text-left font-medium py-2'}
-      onClick={() => setOpen((o) => !o)}
+      aria-expanded={open}
+      onClick={onClick}
       type="button"
     >
       {children}
