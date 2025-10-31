@@ -5,7 +5,7 @@
  * prescrições médicas, incluindo funcionalidades avançadas de busca por
  * paciente com autocomplete em tempo real, filtragem por status, seleção
  * múltipla e ações em lote.
- * 
+ * /api/patients/user/{userId}
  * @features
  * - Listagem paginada de prescrições com scroll infinito otimizado
  * - Autocomplete inteligente de pacientes com debounce

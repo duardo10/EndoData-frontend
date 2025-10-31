@@ -1629,8 +1629,3 @@ export default function ReceitasPage() {
     </DashboardLayout>
   )
 }
-
-// =====================================
-// EXPORTAÇÃO PADRÃO
-// =====================================
-// Componente exportado como padrão para uso em roteamento do Next.js

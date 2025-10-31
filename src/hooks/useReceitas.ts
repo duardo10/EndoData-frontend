@@ -1,3 +1,4 @@
+  // ...existing code...
 /**
  * Hook personalizado para gerenciamento completo de Receitas Médicas.
  *
@@ -30,7 +31,8 @@
  * @todo Adicionar exportação de receitas em PDF e integração com sistemas externos.
  */
 
-'use client'
+"use client"
+// ...existing code...
 
 import { useState, useEffect, useCallback } from 'react'
 // Update the path below if your receiptService file is in a different location
@@ -211,7 +213,6 @@ export function useReceitas(initialFilters?: ReceiptFilters): UseReceiptsReturn 
   const fetchReceipts = useCallback(async (newFilters?: ReceiptFilters, append = false) => {
     setLoading(prev => ({ ...prev, fetching: true }))
     setError(prev => ({ ...prev, fetch: undefined }))
-    
     try {
       const finalFilters = { ...filters, ...newFilters }
       const response = await ReceiptService.getReceipts(finalFilters)
@@ -235,172 +236,9 @@ export function useReceitas(initialFilters?: ReceiptFilters): UseReceiptsReturn 
       console.log('✅ Receitas carregadas do backend:', response.data.length, 'receitas', append ? '(adicionadas)' : '(substituídas)')
       
     } catch (err: any) {
-      // Se for erro 401 (não autorizado), usar dados mock para desenvolvimento
-      if (err?.response?.status === 401) {
-        console.log('API retornou 401, usando dados mock para desenvolvimento')
-        
-        // Dados mock para desenvolvimento
-        const mockReceipts: Receipt[] = [
-          {
-            id: '1',
-            patientId: 'patient-1',
-            userId: 'user-1',
-            status: ReceiptStatus.PENDING,
-            totalAmount: 250.00,
-            date: '2024-10-10T00:00:00.000Z',
-            createdAt: '2024-10-10T00:00:00.000Z',
-            updatedAt: '2024-10-10T00:00:00.000Z',
-            items: [
-              {
-                id: 'item-1',
-                receiptId: '1',
-                description: 'Consulta médica',
-                quantity: 1,
-                unitPrice: 200.00,
-                totalPrice: 200.00,
-                createdAt: '2024-10-10T00:00:00.000Z',
-                updatedAt: '2024-10-10T00:00:00.000Z'
-              },
-              {
-                id: 'item-2',
-                receiptId: '1',
-                description: 'Exame laboratorial',
-                quantity: 1,
-                unitPrice: 50.00,
-                totalPrice: 50.00,
-                createdAt: '2024-10-10T00:00:00.000Z',
-                updatedAt: '2024-10-10T00:00:00.000Z'
-              }
-            ],
-            patient: {
-              id: 'patient-1',
-              name: 'João Silva',
-              email: 'joao@email.com',
-              phone: '(11) 99999-9999',
-              birthDate: '1990-01-01',
-              cpf: '123.456.789-00',
-              createdAt: '2024-01-01T00:00:00.000Z',
-              updatedAt: '2024-01-01T00:00:00.000Z'
-            },
-            user: {
-              id: 'user-1',
-              name: 'Dr. Maria Santos',
-              email: 'maria@endodata.com',
-              crm: 'CRM/SP 123456',
-              specialty: 'Endocrinologia',
-              createdAt: '2024-01-01T00:00:00.000Z',
-              updatedAt: '2024-01-01T00:00:00.000Z'
-            }
-          },
-          {
-            id: '2',
-            patientId: 'patient-2',
-            userId: 'user-2',
-            status: ReceiptStatus.PAID,
-            totalAmount: 180.00,
-            date: '2024-10-09T00:00:00.000Z',
-            createdAt: '2024-10-09T00:00:00.000Z',
-            updatedAt: '2024-10-09T00:00:00.000Z',
-            items: [
-              {
-                id: 'item-3',
-                receiptId: '2',
-                description: 'Consulta de retorno',
-                quantity: 1,
-                unitPrice: 150.00,
-                totalPrice: 150.00,
-                createdAt: '2024-10-09T00:00:00.000Z',
-                updatedAt: '2024-10-09T00:00:00.000Z'
-              },
-              {
-                id: 'item-4',
-                receiptId: '2',
-                description: 'Medicação',
-                quantity: 1,
-                unitPrice: 30.00,
-                totalPrice: 30.00,
-                createdAt: '2024-10-09T00:00:00.000Z',
-                updatedAt: '2024-10-09T00:00:00.000Z'
-              }
-            ],
-            patient: {
-              id: 'patient-2',
-              name: 'Ana Costa',
-              email: 'ana@email.com',
-              phone: '(11) 88888-8888',
-              birthDate: '1985-05-15',
-              cpf: '987.654.321-00',
-              createdAt: '2024-01-01T00:00:00.000Z',
-              updatedAt: '2024-01-01T00:00:00.000Z'
-            },
-            user: {
-              id: 'user-2',
-              name: 'Dr. Pedro Oliveira',
-              email: 'pedro@endodata.com',
-              crm: 'CRM/SP 789012',
-              specialty: 'Endocrinologia',
-              createdAt: '2024-01-01T00:00:00.000Z',
-              updatedAt: '2024-01-01T00:00:00.000Z'
-            }
-          },
-          {
-            id: '3',
-            patientId: 'patient-3',
-            userId: 'user-1',
-            status: ReceiptStatus.CANCELLED,
-            totalAmount: 300.00,
-            date: '2024-10-08T00:00:00.000Z',
-            createdAt: '2024-10-08T00:00:00.000Z',
-            updatedAt: '2024-10-08T00:00:00.000Z',
-            items: [
-              {
-                id: 'item-5',
-                receiptId: '3',
-                description: 'Consulta especializada',
-                quantity: 1,
-                unitPrice: 300.00,
-                totalPrice: 300.00,
-                createdAt: '2024-10-08T00:00:00.000Z',
-                updatedAt: '2024-10-08T00:00:00.000Z'
-              }
-            ],
-            patient: {
-              id: 'patient-3',
-              name: 'Carlos Pereira',
-              email: 'carlos@email.com',
-              phone: '(11) 77777-7777',
-              birthDate: '1992-12-30',
-              cpf: '456.789.123-00',
-              createdAt: '2024-01-01T00:00:00.000Z',
-              updatedAt: '2024-01-01T00:00:00.000Z'
-            },
-            user: {
-              id: 'user-1',
-              name: 'Dr. Maria Santos',
-              email: 'maria@endodata.com',
-              crm: 'CRM/SP 123456',
-              specialty: 'Endocrinologia',
-              createdAt: '2024-01-01T00:00:00.000Z',
-              updatedAt: '2024-01-01T00:00:00.000Z'
-            }
-          }
-        ]
-        
-        setReceipts(mockReceipts)
-        setTotalReceipts(mockReceipts.length)
-        setCurrentPage(1)
-        setTotalPages(1)
-        
-        if (newFilters) {
-          setFiltersState({ ...filters, ...newFilters })
-        }
-        
-        showNotification('Usando dados mock para desenvolvimento (API não autenticada)', 'error')
-      } else {
-        const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar receitas'
-        setError(prev => ({ ...prev, fetch: errorMessage }))
-        showNotification('Erro ao carregar receitas: ' + errorMessage, 'error')
-      }
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar receitas'
+      setError(prev => ({ ...prev, fetch: errorMessage }))
+      showNotification('Erro ao carregar receitas: ' + errorMessage, 'error')
     } finally {
       setLoading(prev => ({ ...prev, fetching: false }))
     }
@@ -432,6 +270,35 @@ export function useReceitas(initialFilters?: ReceiptFilters): UseReceiptsReturn 
    * Verifica se há mais dados para carregar
    */
   const hasMoreReceipts = currentPage < totalPages && !loading.fetching
+  /**
+   * Atualiza uma receita
+   */
+  const updateReceipt = useCallback(async (id: string, data: UpdateReceiptInput): Promise<Receipt | null> => {
+    setLoading(prev => ({ ...prev, updating: true }))
+    setError(prev => ({ ...prev, update: undefined }))
+    try {
+      const updatedReceipt = await ReceiptService.updateReceipt(id, data)
+      // Atualiza a lista local
+      setReceipts(prev =>
+        prev.map(receipt =>
+          receipt.id === id ? updatedReceipt : receipt
+        )
+      )
+      // Atualiza receita atual se necessário
+      if (currentReceipt?.id === id) {
+        setCurrentReceipt(updatedReceipt)
+      }
+      showNotification('Receita atualizada com sucesso!', "success")
+      return updatedReceipt
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar receita'
+      setError(prev => ({ ...prev, update: errorMessage }))
+      showNotification('Erro ao atualizar receita: ' + errorMessage, 'error')
+      return null
+    } finally {
+      setLoading(prev => ({ ...prev, updating: false }))
+    }
+  }, [currentReceipt])
 
   /**
    * Busca uma receita específica por ID
@@ -457,20 +324,13 @@ export function useReceitas(initialFilters?: ReceiptFilters): UseReceiptsReturn 
   const createReceipt = useCallback(async (data: CreateReceiptInput): Promise<Receipt | null> => {
     setLoading(prev => ({ ...prev, creating: true }))
     setError(prev => ({ ...prev, create: undefined }))
-    
     try {
       const newReceipt = await ReceiptService.createReceipt(data)
-      
-      // Adiciona à lista local
       setReceipts(prev => [newReceipt, ...prev])
-      
-      // Atualiza o total
       setTotalReceipts(prev => prev + 1)
-      
-      showNotification('Receita criada com sucesso!', "success")
+      showNotification('Receita criada com sucesso!', 'success')
       return newReceipt
-      
-    } catch (err) {
+    } catch (err: any) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao criar receita'
       setError(prev => ({ ...prev, create: errorMessage }))
       showNotification('Erro ao criar receita: ' + errorMessage, 'error')
@@ -478,42 +338,7 @@ export function useReceitas(initialFilters?: ReceiptFilters): UseReceiptsReturn 
     } finally {
       setLoading(prev => ({ ...prev, creating: false }))
     }
-  }, [])
-
-  /**
-   * Atualiza uma receita existente
-   */
-  const updateReceipt = useCallback(async (id: string, data: UpdateReceiptInput): Promise<Receipt | null> => {
-    setLoading(prev => ({ ...prev, updating: true }))
-    setError(prev => ({ ...prev, update: undefined }))
-    
-    try {
-      const updatedReceipt = await ReceiptService.updateReceipt(id, data)
-      
-      // Atualiza a lista local
-      setReceipts(prev => 
-        prev.map(receipt => 
-          receipt.id === id ? updatedReceipt : receipt
-        )
-      )
-      
-      // Atualiza receita atual se necessário
-      if (currentReceipt?.id === id) {
-        setCurrentReceipt(updatedReceipt)
-      }
-      
-      showNotification('Receita atualizada com sucesso!', "success")
-      return updatedReceipt
-      
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar receita'
-      setError(prev => ({ ...prev, update: errorMessage }))
-      showNotification('Erro ao atualizar receita: ' + errorMessage, 'error')
-      return null
-    } finally {
-      setLoading(prev => ({ ...prev, updating: false }))
-    }
-  }, [currentReceipt])
+  }, [filters])
 
   /**
    * Remove uma receita
