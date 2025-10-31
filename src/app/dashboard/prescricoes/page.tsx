@@ -63,19 +63,6 @@ interface StatusMapping {
 // =====================================
 
 export default function PrescricoesPage() {
-  // Atualiza prescrições ao montar ou ao focar a tela, sempre filtrando por userId
-  useEffect(() => {
-    const handleFocus = () => {
-      updateFilters({ userId })
-    }
-    window.addEventListener('focus', handleFocus)
-    updateFilters({ userId })
-    return () => {
-      window.removeEventListener('focus', handleFocus)
-    }
-  }, [])
-
-  const userId = getUserIdFromToken()
   // Helper para extrair userId do token JWT
   function getUserIdFromToken() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
@@ -87,6 +74,19 @@ export default function PrescricoesPage() {
       return undefined
     }
   }
+
+  const userId = getUserIdFromToken()
+  // Atualiza prescrições ao montar ou ao focar a tela, sempre filtrando por userId
+  useEffect(() => {
+    updateFilters({ userId }) // Filtra imediatamente ao montar
+    const handleFocus = () => {
+      updateFilters({ userId })
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [userId])
   // ===================================== 
   // HOOKS E ESTADOS
   // =====================================
@@ -119,6 +119,8 @@ export default function PrescricoesPage() {
   const [selectedPatient, setSelectedPatient] = useState<any>(null)
   const [isSearchingPatients, setIsSearchingPatients] = useState(false)
   const [showPatientDropdown, setShowPatientDropdown] = useState(false)
+  // Cache de pacientes do usuário logado
+  const [cachedUserPatients, setCachedUserPatients] = useState<any[] | null>(null)
 
   // Estados para modais
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -147,8 +149,7 @@ export default function PrescricoesPage() {
     setIsSearchingPatients(true)
     try {
       // Busca pacientes do usuário logado
-      const userId = getUserIdFromToken()
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/user/${userId}`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/user/${userId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           'Content-Type': 'application/json'
@@ -538,6 +539,36 @@ export default function PrescricoesPage() {
                 <Input
                   type="text"
                   value={patientSearchTerm}
+                  onFocus={async () => {
+                    // Se o campo está vazio, mostrar todos os pacientes do usuário logado
+                    if (!patientSearchTerm) {
+                      setIsSearchingPatients(true)
+                      // Se já existe cache, usa ele
+                      if (cachedUserPatients && cachedUserPatients.length > 0) {
+                        setPatientSearchResults(cachedUserPatients)
+                        setShowPatientDropdown(cachedUserPatients.length > 0)
+                        setIsSearchingPatients(false)
+                        return
+                      }
+                      // Se não existe cache, busca e salva
+                      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/user/${userId}`, {
+                        headers: {
+                          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                          'Content-Type': 'application/json'
+                        }
+                      })
+                      if (response.ok) {
+                        const data = await response.json()
+                        setPatientSearchResults(data || [])
+                        setCachedUserPatients(data || [])
+                        setShowPatientDropdown((data || []).length > 0)
+                      } else {
+                        setPatientSearchResults([])
+                        setShowPatientDropdown(false)
+                      }
+                      setIsSearchingPatients(false)
+                    }
+                  }}
                   onChange={(e) => {
                     setPatientSearchTerm(e.target.value)
                     if (!e.target.value) clearPatientSelection()
