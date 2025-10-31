@@ -19,6 +19,35 @@ import { Badge } from '@/components/ui/badge'
 const COLORS = ['#2074E9', '#34D399', '#F59E42', '#F43F5E']
 
 export default function Relatorios(): React.ReactElement {
+  const handleExport = () => {
+    let content = `<div style='font-family:sans-serif;padding:24px;'>`;
+    content += `<h2>Relatório</h2>`;
+    if (user) {
+      content += `<p><b>Médico:</b> ${user.name} (${user.especialidade})<br/><b>CRM:</b> ${user.crm}</p>`;
+    }
+    if (metrics) {
+      content += `<h3>Resumo de Receitas</h3>`;
+      content += `<p><b>Receitas Emitidas no Mês:</b> ${metrics.monthlyReceipts}</p>`;
+      content += `<p><b>Receita Total do Mês:</b> R$ ${metrics.monthlyRevenue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>`;
+      content += `<p><b>Valor Médio das Receitas:</b> R$ ${metrics.averageReceiptValue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>`;
+    }
+    if (topMedications && topMedications.medications.length > 0) {
+      content += `<h3>Medicamentos mais prescritos</h3><ul>`;
+      topMedications.medications.forEach((med: { name: string; totalPrescriptions: number; percent: number }) => {
+        content += `<li>${med.name} - ${med.totalPrescriptions} prescrições (${med.percent}%)</li>`;
+      });
+      content += `</ul>`;
+    }
+    content += `</div>`;
+    const printWindow = window.open('', '', 'width=700,height=600');
+    if (printWindow) {
+      printWindow.document.write(content);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+  }
 
   const [periodo, setPeriodo] = useState('2025')
   const [busca, setBusca] = useState('')
@@ -77,26 +106,7 @@ export default function Relatorios(): React.ReactElement {
               <CardDescription className="text-gray-700 mt-1">Acompanhe métricas, gráficos e exporte relatórios para tomada de decisão.</CardDescription>
             </div>
             <div className="flex gap-2 items-center">
-              <Input
-                type="search"
-                placeholder="Buscar paciente, prescrição..."
-                className="w-56"
-                value={busca}
-                onChange={e => setBusca(e.target.value)}
-              />
-              <Input
-                type="number"
-                min="2020"
-                max="2025"
-                value={periodo}
-                onChange={e => setPeriodo(e.target.value)}
-                className="w-24"
-                aria-label="Ano do relatório"
-              />
-              <Button variant="outline" className="gap-2">
-                <CalendarDays className="w-4 h-4" /> Filtrar
-              </Button>
-              <Button variant="secondary" className="gap-2">
+              <Button variant="secondary" className="gap-2" onClick={handleExport}>
                 <FileDown className="w-4 h-4" /> Exportar
               </Button>
               <Button variant="ghost" className="gap-2" onClick={fetchDashboardData} disabled={loading}>
