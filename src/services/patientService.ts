@@ -57,9 +57,20 @@ export class PatientService {
    * Busca todos os pacientes
    * @returns Promise<PatientsResponse>
    */
-  static async getPatients(): Promise<PatientsResponse> {
-    const response = await api.get('/patients')
-    return response.data
+  static async getPatients(userId?: string): Promise<PatientsResponse> {
+    if (!userId) {
+      // Tenta extrair do token
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          userId = payload.sub || payload.id || payload.userId
+        } catch {}
+      }
+    }
+    if (!userId) throw new Error('userId não informado')
+    const response = await api.get(`/patients/user/${userId}`)
+    return { patients: response.data, total: response.data.length, page: 1, limit: response.data.length }
   }
 
   /**
@@ -69,24 +80,28 @@ export class PatientService {
    * @returns Promise<PatientsResponse>
    */
   static async searchPatients(searchText: string, limit: number = 10): Promise<PatientsResponse> {
-    const params = new URLSearchParams()
-    
+    // Busca todos os pacientes do usuário e filtra por nome/CPF
+    let userId: string | undefined
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        userId = payload.sub || payload.id || payload.userId
+      } catch {}
+    }
+    if (!userId) throw new Error('userId não informado')
+    const response = await api.get(`/patients/user/${userId}`)
+    let filtered = response.data as Patient[]
     if (searchText) {
-      // Verificar se é um CPF (apenas dígitos)
       const cleanText = searchText.replace(/\D/g, '')
       if (cleanText.length >= 3 && /^\d+$/.test(cleanText)) {
-        // Se parece com CPF (3+ dígitos), usar parâmetro cpf para busca parcial
-        params.append('cpf', cleanText)
+        filtered = filtered.filter(p => p.cpf && p.cpf.includes(cleanText))
       } else {
-        // Caso contrário, usar searchText para busca por nome
-        params.append('searchText', searchText)
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(searchText.toLowerCase()))
       }
     }
-    
-    params.append('limit', limit.toString())
-    
-    const response = await api.get(`/patients/search?${params.toString()}`)
-    return response.data
+    filtered = filtered.slice(0, limit)
+    return { patients: filtered, total: filtered.length, page: 1, limit }
   }
 
   /**

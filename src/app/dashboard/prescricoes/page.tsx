@@ -63,6 +63,30 @@ interface StatusMapping {
 // =====================================
 
 export default function PrescricoesPage() {
+  // Atualiza prescrições ao montar ou ao focar a tela, sempre filtrando por userId
+  useEffect(() => {
+    const handleFocus = () => {
+      updateFilters({ userId })
+    }
+    window.addEventListener('focus', handleFocus)
+    updateFilters({ userId })
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [])
+
+  const userId = getUserIdFromToken()
+  // Helper para extrair userId do token JWT
+  function getUserIdFromToken() {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+    if (!token) return undefined
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      return payload.sub || payload.id || payload.userId
+    } catch {
+      return undefined
+    }
+  }
   // ===================================== 
   // HOOKS E ESTADOS
   // =====================================
@@ -122,7 +146,9 @@ export default function PrescricoesPage() {
 
     setIsSearchingPatients(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/search?searchText=${encodeURIComponent(searchTerm)}`, {
+      // Busca pacientes do usuário logado
+      const userId = getUserIdFromToken()
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/user/${userId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           'Content-Type': 'application/json'
@@ -131,7 +157,11 @@ export default function PrescricoesPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setPatientSearchResults(data.patients || [])
+        // Filtra por nome do paciente
+        const filtered = (data || []).filter((patient: any) =>
+          patient.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        setPatientSearchResults(filtered)
         setShowPatientDropdown(true)
       } else {
         setPatientSearchResults([])
@@ -606,7 +636,8 @@ export default function PrescricoesPage() {
                   status: statusValue,
                   patientId: selectedPatient?.id || undefined,
                   startDate: startDate,
-                  endDate: endDate
+                  endDate: endDate,
+                  userId
                 })
               }}
             >
@@ -617,7 +648,7 @@ export default function PrescricoesPage() {
               onClick={() => {
                 setFilters({ paciente: '', status: 'Todos', periodo: '' })
                 clearPatientSelection()
-                updateFilters({})
+                updateFilters({ userId })
               }}
             >
               Limpar Filtros

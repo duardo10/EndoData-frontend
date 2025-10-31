@@ -68,7 +68,16 @@ export default function CreatePrescriptionModal({ isOpen, onClose, onSuccess }: 
   const loadPatients = async () => {
     try {
       setIsLoadingPatients(true)
-      const response = await PatientService.getPatients()
+      // Obter userId do token JWT
+      let userId: string | undefined
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          userId = payload.sub || payload.id || payload.userId
+        } catch {}
+      }
+      const response = await PatientService.getPatients(userId)
       setPatients(response.patients || [])
     } catch (error) {
       console.error('Erro ao carregar pacientes:', error)
@@ -92,6 +101,15 @@ export default function CreatePrescriptionModal({ isOpen, onClose, onSuccess }: 
     const timeoutId = setTimeout(async () => {
       try {
         setIsSearchingPatients(true)
+        // Obter userId do token JWT
+        let userId: string | undefined
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]))
+            userId = payload.sub || payload.id || payload.userId
+          } catch {}
+        }
         const response = await PatientService.searchPatients(patientSearch)
         const patients = response?.patients || []
         setPatientSearchResults(patients)
