@@ -264,82 +264,48 @@ export default function ReceitasPage() {
       setPatientSearchResults([]);
       return;
     }
-
     setIsSearchingPatients(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/search?searchText=${encodeURIComponent(searchTerm)}`, {
+      const token = localStorage.getItem('auth_token');
+      let userId = null;
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        userId = payload.userId || payload.id || payload.sub;
+      }
+      if (!userId) {
+        setPatientSearchResults([]);
+        setIsSearchingPatients(false);
+        return;
+      }
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/user/${userId}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-
       if (response.ok) {
         const data = await response.json();
-        setPatientSearchResults(data.patients || []);
+        const patients = Array.isArray(data) ? data : (data.patients || []);
+        const filtered = patients.filter((patient: any) =>
+          patient.name && patient.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setPatientSearchResults(filtered);
       } else {
-        console.error('Erro ao buscar pacientes:', response.status);
         setPatientSearchResults([]);
       }
     } catch (error) {
-      console.error('Erro ao buscar pacientes:', error);
       setPatientSearchResults([]);
     } finally {
       setIsSearchingPatients(false);
     }
   };
 
-  /**
-   * Seleciona um paciente do dropdown de resultados.
-   * 
-   * Quando um usuário clica em um paciente no dropdown de autocomplete,
-   * esta função é executada para definir o paciente selecionado e
-   * atualizar todos os estados relacionados. O paciente selecionado
-   * será usado nos filtros de receitas.
-   * 
-   * @param {any} patient - Objeto do paciente selecionado contendo id, name, cpf, etc.
-   * @returns {void}
-   * 
-   * @example
-   * ```typescript
-   * const patient = { id: "123", name: "João Silva", cpf: "12345678900" };
-   * selectPatient(patient);
-   * ```
-   * 
-   * @sideEffects
-   * - Define o paciente selecionado no estado
-   * - Preenche o campo de busca com o nome do paciente
-   * - Fecha o dropdown de resultados
-   * - Atualiza os filtros para incluir o paciente selecionado
-   */
   const selectPatient = (patient: any) => {
     setSelectedPatient(patient);
     setPatientSearchTerm(patient.name);
     setShowPatientDropdown(false);
     setFilters(prev => ({ ...prev, paciente: patient.name }));
   };
-
-  /**
-   * Limpa a seleção atual de paciente e reseta estados relacionados.
-   * 
-   * Remove o paciente selecionado e limpa todos os estados de busca,
-   * resultados e filtros relacionados ao paciente. Usado quando o
-   * usuário clica no botão "X" ou quando os filtros são resetados.
-   * 
-   * @returns {void}
-   * 
-   * @example
-   * ```typescript
-   * clearPatientSelection(); // Remove seleção e limpa estados
-   * ```
-   * 
-   * @sideEffects
-   * - Remove paciente selecionado do estado
-   * - Limpa o campo de busca de pacientes
-   * - Remove resultados de busca da memória
-   * - Fecha o dropdown se estiver aberto
-   * - Remove paciente dos filtros ativos
-   */
   const clearPatientSelection = () => {
     setSelectedPatient(null);
     setPatientSearchTerm('');
