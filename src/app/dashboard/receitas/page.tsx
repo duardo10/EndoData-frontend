@@ -1537,16 +1537,6 @@ export default function ReceitasPage() {
         receipt={selectedReceipt}
         onSave={handleUpdateReceipt}
       />
-
-      <EditReceiptModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false)
-        setSelectedReceipt(null)
-      }}
-      receipt={selectedReceipt}
-      onSave={handleUpdateReceipt}
-    />
   </DashboardLayout>
 )
 }
