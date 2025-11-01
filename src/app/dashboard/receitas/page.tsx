@@ -159,6 +159,10 @@ interface StatusMapping {
  * @returns {JSX.Element} Interface de gerenciamento de receitas
  */
 export default function ReceitasPage() {
+  // Receitas filtradas dos pacientes do usuário logado
+  const filteredReceipts = receipts.filter(receipt =>
+    patientSearchResults.some(p => p.id === receipt.patient?.id)
+  );
   // Carrega todos os pacientes do usuário logado ao montar a página
   useEffect(() => {
     const fetchUserPatients = async () => {
@@ -597,31 +601,26 @@ export default function ReceitasPage() {
    * @returns {void}
    */
   const handlePrintSelectedReceipts = () => {
-    // Filtra as receitas selecionadas
-    const receiptsToPrint = receipts.filter(receipt => 
+    // Filtra as receitas dos pacientes do usuário logado e selecionadas
+    const filteredReceipts = receipts.filter(receipt =>
+      patientSearchResults.some(p => p.id === receipt.patient?.id)
+    )
+    const receiptsToPrint = filteredReceipts.filter(receipt =>
       selectedReceipts.includes(receipt.id)
     )
-    
     if (receiptsToPrint.length === 0) {
       alert('Selecione pelo menos uma receita para imprimir.')
       return
     }
-
     const title = `${receiptsToPrint.length} Receitas Selecionadas - Impressão`
     const printContent = generatePrintContent(receiptsToPrint, title)
-
-    // Abre nova janela para impressão
     const printWindow = window.open('', '_blank')
     if (printWindow) {
       printWindow.document.write(printContent)
       printWindow.document.close()
-      
-      // Aguarda carregamento e inicia impressão
       setTimeout(() => {
         printWindow.focus()
         printWindow.print()
-        
-        // Limpa seleção após imprimir
         setTimeout(() => {
           setSelectedReceipts([])
         }, 1000)
@@ -654,65 +653,20 @@ export default function ReceitasPage() {
    */
   const handlePrintAllReceipts = async () => {
     try {
-      // Busca todas as receitas de uma vez (sem paginação)
-      const token = localStorage.getItem('auth_token')
-      if (!token) {
-        alert('Token de autenticação não encontrado.')
-        return
-      }
-
-      // Mostra indicador de carregamento
-      const loadingAlert = document.createElement('div')
-      loadingAlert.innerHTML = `
-        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                    background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    z-index: 1000; display: flex; align-items: center; gap: 10px;">
-          <div style="width: 20px; height: 20px; border: 2px solid #e5e7eb; border-top: 2px solid #3b82f6; 
-                      border-radius: 50%; animation: spin 1s linear infinite;"></div>
-          <span>Buscando todas as receitas...</span>
-        </div>
-        <style>
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        </style>
-      `
-      document.body.appendChild(loadingAlert)
-
-      // Busca todas as receitas sem limite de página
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/receipts?limit=1000&page=1`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar receitas: ${response.status}`)
-      }
-
-      const data = await response.json()
-      const allReceipts = data.data || []
-
-      // Remove indicador de carregamento
-      document.body.removeChild(loadingAlert)
-
-      if (allReceipts.length === 0) {
+      // Filtra as receitas dos pacientes do usuário logado
+      const filteredReceipts = receipts.filter(receipt =>
+        patientSearchResults.some(p => p.id === receipt.patient?.id)
+      )
+      if (filteredReceipts.length === 0) {
         alert('Não há receitas para imprimir.')
         return
       }
-
-      const title = `${allReceipts.length} Receitas - Impressão Completa`
-      const printContent = generatePrintContent(allReceipts, title)
-
-      // Abre nova janela para impressão
+      const title = `${filteredReceipts.length} Receitas - Impressão Completa`
+      const printContent = generatePrintContent(filteredReceipts, title)
       const printWindow = window.open('', '_blank')
       if (printWindow) {
         printWindow.document.write(printContent)
         printWindow.document.close()
-        
-        // Aguarda carregamento e inicia impressão
         setTimeout(() => {
           printWindow.focus()
           printWindow.print()
@@ -720,16 +674,9 @@ export default function ReceitasPage() {
       } else {
         alert('Não foi possível abrir a janela de impressão. Verifique se o bloqueador de pop-ups está desabilitado.')
       }
-
     } catch (error) {
-      // Remove indicador de carregamento em caso de erro
-      const loadingAlert = document.querySelector('div[style*="position: fixed"]')
-      if (loadingAlert) {
-        document.body.removeChild(loadingAlert)
-      }
-      
-      console.error('Erro ao buscar todas as receitas:', error)
-      alert('Erro ao buscar todas as receitas. Tente novamente.')
+      console.error('Erro ao imprimir receitas:', error)
+      alert('Erro ao imprimir receitas. Tente novamente.')
     }
   }
 
@@ -1511,7 +1458,7 @@ export default function ReceitasPage() {
     </Card>
 
         {/* Ações rápidas - Gestão e Impressão */}
-        {receipts.length >= 0 && (
+        {filteredReceipts.length >= 0 && (
           <Card className="p-4">
             <div className="flex items-center justify-between">
               {/* Lado esquerdo - Botões de gestão */}
@@ -1545,7 +1492,7 @@ export default function ReceitasPage() {
                     🖨️ Imprimir todas as receitas do sistema
                   </span>
                   <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                    ({totalReceipts} total)
+                    ({filteredReceipts.length} total)
                   </span>
                 </div>
                 
@@ -1556,7 +1503,7 @@ export default function ReceitasPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                   </svg>
-                  Imprimir todas ({totalReceipts})
+                  Imprimir todas ({filteredReceipts.length})
                 </Button>
               </div>
             </div>
