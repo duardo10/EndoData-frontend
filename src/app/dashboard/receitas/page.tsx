@@ -159,10 +159,6 @@ interface StatusMapping {
  * @returns {JSX.Element} Interface de gerenciamento de receitas
  */
 export default function ReceitasPage() {
-  // Receitas filtradas dos pacientes do usuário logado
-  const filteredReceipts = receipts.filter(receipt =>
-    patientSearchResults.some(p => p.id === receipt.patient?.id)
-  );
   // Carrega todos os pacientes do usuário logado ao montar a página
   useEffect(() => {
     const fetchUserPatients = async () => {
@@ -206,6 +202,14 @@ export default function ReceitasPage() {
     totalPages
   } = useReceitas()
 
+  /** Array de pacientes retornados pela API de busca */
+  const [patientSearchResults, setPatientSearchResults] = useState<any[]>([]);
+
+  // Receitas filtradas dos pacientes do usuário logado
+  const filteredReceipts = receipts.filter(receipt =>
+    Array.isArray(patientSearchResults) && patientSearchResults.some(p => p.id === receipt.patient?.id)
+  );
+
   /** Estado para controle de abertura/fechamento do modal de criação */
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   
@@ -246,9 +250,6 @@ export default function ReceitasPage() {
 
   /** Termo de busca digitado pelo usuário no campo de paciente */
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
-  
-  /** Array de pacientes retornados pela API de busca */
-  const [patientSearchResults, setPatientSearchResults] = useState<any[]>([]);
   
   /** Paciente atualmente selecionado no autocomplete */
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
@@ -1439,7 +1440,7 @@ export default function ReceitasPage() {
             {!hasMoreReceipts && !loading.fetching && receipts.length > 0 && (
               <tr>
                 <td colSpan={7} className="text-center py-4 text-sm text-gray-500">
-                  Todas as {totalReceipts} receitas foram carregadas
+                  Todas as {filteredReceipts.length} receitas foram carregadas
                 </td>
               </tr>
             )}
