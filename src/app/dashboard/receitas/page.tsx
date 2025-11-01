@@ -159,6 +159,30 @@ interface StatusMapping {
  * @returns {JSX.Element} Interface de gerenciamento de receitas
  */
 export default function ReceitasPage() {
+  // Carrega todos os pacientes do usuário logado ao montar a página
+  useEffect(() => {
+    const fetchUserPatients = async () => {
+      const token = localStorage.getItem('auth_token');
+      let userId = null;
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        userId = payload.userId || payload.id || payload.sub;
+      }
+      if (!userId) return;
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/user/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const patients = Array.isArray(data) ? data : (data.patients || []);
+        setPatientSearchResults(patients);
+      }
+    };
+    fetchUserPatients();
+  }, []);
   // =====================================
   // HOOKS E ESTADOS
   // =====================================
@@ -1156,11 +1180,12 @@ export default function ReceitasPage() {
    * @accessibility Estrutura semântica com roles e labels adequados
    */
   return (
-    <DashboardLayout>
-      <div className="p-6 space-y-6">
-        {/* Título da página */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Receitas Médicas Recentes</h1>
+    
+      <DashboardLayout>
+        <div className="p-6 space-y-6">
+          {/* Título da página */}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Receitas Médicas Recentes</h1>
         </div>
 
         {/* Seção de Filtros */}
@@ -1178,18 +1203,17 @@ export default function ReceitasPage() {
                   placeholder="Digite o nome do paciente"
                   value={patientSearchTerm}
                   onChange={(e) => {
-                    setPatientSearchTerm(e.target.value);
+                    setPatientSearchTerm(e.target.value)
                     if (!e.target.value) {
-                      clearPatientSelection();
+                      clearPatientSelection()
                     }
-                  }}
+                  } }
                   onFocus={() => {
                     if (patientSearchResults.length > 0) {
-                      setShowPatientDropdown(true);
+                      setShowPatientDropdown(true)
                     }
-                  }}
-                  className="w-full pr-10"
-                />
+                  } }
+                  className="w-full pr-10" />
                 {selectedPatient && (
                   <button
                     onClick={clearPatientSelection}
@@ -1205,7 +1229,7 @@ export default function ReceitasPage() {
                   </div>
                 )}
               </div>
-              
+
               {/* Dropdown de resultados */}
               {showPatientDropdown && patientSearchResults.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
@@ -1222,7 +1246,7 @@ export default function ReceitasPage() {
                   ))}
                 </div>
               )}
-              
+
               {/* Indicador de paciente selecionado */}
               {selectedPatient && (
                 <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
@@ -1258,28 +1282,27 @@ export default function ReceitasPage() {
                 placeholder="Selecionar data"
                 value={filters.periodo}
                 onChange={(e) => setFilters(prev => ({ ...prev, periodo: e.target.value }))}
-                className="w-full"
-              />
+                className="w-full" />
             </div>
           </div>
 
           {/* Botões de ação dos filtros */}
           <div className="flex gap-3 mt-4">
-            <Button 
+            <Button
               className="bg-blue-600 hover:bg-blue-700 text-white"
               onClick={() => {
                 console.log('🔍 Aplicando filtros:', filters)
-                
+
                 // Mapeamento de status da interface para valores do backend
                 let statusValue: string | undefined = undefined
                 if (filters.status === 'Pendente') statusValue = 'pending'
                 else if (filters.status === 'Pago') statusValue = 'paid'
                 else if (filters.status === 'Cancelado') statusValue = 'cancelled'
-                
+
                 // Formatação correta das datas para incluir o dia inteiro
                 let startDate = filters.periodo
                 let endDate = filters.periodo ? `${filters.periodo}T23:59:59.999Z` : undefined
-                
+
                 const filtersToApply = {
                   status: statusValue as any,
                   period: filters.periodo ? ('custom' as const) : undefined,
@@ -1288,23 +1311,23 @@ export default function ReceitasPage() {
                   // Inclui patientId se um paciente foi selecionado
                   patientId: selectedPatient?.id || undefined,
                 }
-                
+
                 console.log('📤 Enviando filtros para API:', filtersToApply)
-                
+
                 // Aplica filtros através do hook customizado
                 updateFilters(filtersToApply)
-              }}
+              } }
             >
               Aplicar Filtros
             </Button>
-            <Button 
+            <Button
               variant="outline"
               onClick={() => {
                 // Limpa filtros locais e do hook
                 setFilters({ paciente: '', status: 'Todos', periodo: '' })
                 clearPatientSelection()
                 updateFilters({})
-              }}
+              } }
             >
               Limpar Filtros
             </Button>
@@ -1317,18 +1340,17 @@ export default function ReceitasPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <svg 
-                    className="w-5 h-5 text-blue-700" 
-                    fill="none" 
-                    stroke="currentColor" 
+                  <svg
+                    className="w-5 h-5 text-blue-700"
+                    fill="none"
+                    stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" 
-                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div className="text-sm font-medium text-blue-900">
                     {selectedReceipts.length} receita{selectedReceipts.length > 1 ? 's' : ''} selecionada{selectedReceipts.length > 1 ? 's' : ''}
@@ -1346,18 +1368,17 @@ export default function ReceitasPage() {
                   onClick={handlePrintSelectedReceipts}
                   className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
                 >
-                  <svg 
-                    className="w-4 h-4" 
-                    fill="none" 
-                    stroke="currentColor" 
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" 
-                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                   </svg>
                   Imprimir Selecionadas
                 </Button>
@@ -1371,7 +1392,7 @@ export default function ReceitasPage() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Lista de Receitas</h2>
             <div className="text-sm text-gray-500">
-              {receipts.length} de {totalReceipts} receitas 
+              {receipts.length} de {totalReceipts} receitas
               {totalPages > 1 && (
                 <span className="ml-2">
                   (Página {currentPage} de {totalPages})
@@ -1379,7 +1400,7 @@ export default function ReceitasPage() {
               )}
             </div>
           </div>
-          
+
           {loading.fetching && receipts.length === 0 && (
             <div className="text-center py-8">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -1387,131 +1408,107 @@ export default function ReceitasPage() {
             </div>
           )}
 
-          {/* 
-            Tabela de receitas com scroll infinito otimizado
-            
-            Container com altura fixa (h-96 = 384px) que implementa scroll infinito
-            apenas dentro da tabela, sem afetar o scroll da página principal.
-            
-            Funcionalidades:
-            - Altura fixa de 384px com overflow interno
-            - Scroll infinito detectado via useInfiniteScroll hook
-            - Cabeçalho sticky que permanece visível durante scroll
-            - Loading indicators integrados dentro da tabela
-            - Suporte a seleção múltipla com checkboxes
-            - Responsivo com scroll horizontal automático
-            
-            Esta implementação substitui o scroll infinito da página,
-            proporcionando melhor experiência do usuário e performance.
-          */}
-          <div 
+          {/* Tabela de receitas com scroll infinito otimizado */}
+          <div
             ref={tableContainerRef as any}
             className="h-96 max-h-96 overflow-y-auto overflow-x-auto border border-gray-200 rounded-lg bg-white"
           >
-            <table className="min-w-full table-auto">
-              <thead className="bg-gray-50 sticky top-0 z-10">
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    <input 
-                      type="checkbox" 
-                      className="rounded"
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedReceipts(receipts.map(r => r.id))
-                        } else {
-                          setSelectedReceipts([])
-                        }
-                      }}
-                    />
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Título da Receita</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Paciente</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Médico</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Data</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {receipts.map((receipt) => (
-                  <tr key={receipt.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      <input 
-                        type="checkbox" 
-                        className="rounded"
-                        checked={selectedReceipts.includes(receipt.id)}
-                        onChange={() => toggleReceiptSelection(receipt.id)}
-                      />
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="font-medium text-gray-900">
-                        {receipt.items && receipt.items.length > 0 
-                          ? `Receita para ${receipt.items[0].description}` 
-                          : 'Receita Médica'
-                        }
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-gray-700">
-                      {receipt.patient?.name || 'N/A'}
-                    </td>
-                    <td className="py-3 px-4 text-gray-700">
-                      {receipt.user?.name || 'N/A'}
-                    </td>
-                    <td className="py-3 px-4 text-gray-700">
-                      {new Date(receipt.date).toLocaleDateString('pt-BR')}
-                    </td>
-                    <td className="py-3 px-4">
-                      {getStatusBadge(receipt.status)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex gap-2">
-                        <button 
-                          className="text-blue-600 hover:text-blue-900 font-medium" 
-                          title="Visualizar"
-                          onClick={() => handleViewReceipt(receipt)}
-                        >
-                          Ver
-                        </button>
-                        <button 
-                          className="text-green-600 hover:text-green-900 font-medium" 
-                          title="Editar"
-                          onClick={() => handleEditReceipt(receipt)}
-                        >
-                          Editar
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                
-                {/* Indicadores de carregamento dentro da tabela */}
-                {loading.fetching && receipts.length > 0 && (
-                  <tr>
-                    <td colSpan={7} className="text-center py-4">
-                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                      <p className="mt-2 text-sm text-gray-600">Carregando mais receitas...</p>
-                    </td>
-                  </tr>
-                )}
-                
-                {/* Indicador de fim dos dados dentro da tabela */}
-                {!hasMoreReceipts && !loading.fetching && receipts.length > 0 && (
-                  <tr>
-                    <td colSpan={7} className="text-center py-4 text-sm text-gray-500">
-                      Todas as {totalReceipts} receitas foram carregadas
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+        <table className="min-w-full table-auto">
+          <thead className="bg-gray-50 sticky top-0 z-10">
+            <tr className="border-b border-gray-200">
+              <th className="py-3 px-4"></th>
+              <th className="py-3 px-4 font-medium text-gray-700">Descrição</th>
+              <th className="py-3 px-4 font-medium text-gray-700">Paciente</th>
+              <th className="py-3 px-4 font-medium text-gray-700">Médico</th>
+              <th className="py-3 px-4 font-medium text-gray-700">Data</th>
+              <th className="py-3 px-4 font-medium text-gray-700">Status</th>
+              <th className="py-3 px-4 font-medium text-gray-700">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(receipts.filter(receipt => {
+              // Sempre filtra pelas IDs dos pacientes do usuário logado
+              return patientSearchResults.some(p => p.id === receipt.patient?.id)
+            })).map((receipt) => (
+              <tr key={receipt.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="py-3 px-4">
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    checked={selectedReceipts.includes(receipt.id)}
+                    onChange={() => toggleReceiptSelection(receipt.id)} />
+                </td>
+                <td className="py-3 px-4">
+                  <span className="font-medium text-gray-900">
+                    {receipt.items && receipt.items.length > 0
+                      ? `Receita para ${receipt.items[0].description}`
+                      : 'Receita Médica'}
+                  </span>
+                </td>
+                <td className="py-3 px-4 text-gray-700">
+                  {receipt.patient?.name || 'N/A'}
+                </td>
+                <td className="py-3 px-4 text-gray-700">
+                  {receipt.user?.name || 'N/A'}
+                </td>
+                <td className="py-3 px-4 text-gray-700">
+                  {new Date(receipt.date).toLocaleDateString('pt-BR')}
+                </td>
+                <td className="py-3 px-4">
+                  {getStatusBadge(receipt.status)}
+                </td>
+                <td className="py-3 px-4">
+                  <div className="flex gap-2">
+                    <button
+                      className="text-blue-600 hover:text-blue-900 font-medium"
+                      title="Visualizar"
+                      onClick={() => handleViewReceipt(receipt)}
+                    >
+                      Ver
+                    </button>
+                    <button
+                      className="text-green-600 hover:text-green-900 font-medium"
+                      title="Editar"
+                      onClick={() => handleEditReceipt(receipt)}
+                    >
+                      Editar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
 
-            {receipts.length === 0 && !loading.fetching && (
-              <div className="text-center py-8 text-gray-500">
-                <p>Nenhuma receita encontrada</p>
-              </div>
+            {/* Indicadores de carregamento dentro da tabela */}
+            {loading.fetching && receipts.length > 0 && (
+              <tr>
+                <td colSpan={7} className="text-center py-4">
+                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <p className="mt-2 text-sm text-gray-600">Carregando mais receitas...</p>
+                </td>
+              </tr>
             )}
+
+            {/* Indicador de fim dos dados dentro da tabela */}
+            {!hasMoreReceipts && !loading.fetching && receipts.length > 0 && (
+              <tr>
+                <td colSpan={7} className="text-center py-4 text-sm text-gray-500">
+                  Todas as {totalReceipts} receitas foram carregadas
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        {receipts.filter(receipt => {
+          if (!patientSearchResults.length) return true
+          return patientSearchResults.some(p => p.id === receipt.patient?.id)
+        }).length === 0 && !loading.fetching && (
+          <div className="text-center py-8 text-gray-500">
+            <p>Nenhuma receita encontrada</p>
           </div>
-        </Card>
+        )}
+      </div>
+    </Card>
 
         {/* Ações rápidas - Gestão e Impressão */}
         {receipts.length >= 0 && (
@@ -1592,6 +1589,16 @@ export default function ReceitasPage() {
         receipt={selectedReceipt}
         onSave={handleUpdateReceipt}
       />
-    </DashboardLayout>
-  )
+
+      <EditReceiptModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+        setSelectedReceipt(null)
+      }}
+      receipt={selectedReceipt}
+      onSave={handleUpdateReceipt}
+    />
+  </DashboardLayout>
+)
 }
