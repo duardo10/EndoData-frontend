@@ -1,15 +1,16 @@
 /**
- * @fileoverview Serviço de Autenticação - EndoData
- * @description Implementa todas as operações de autenticação incluindo
- * registro, login, logout e gerenciamento de tokens JWT.
- * 
+ * Serviço de Autenticação - EndoData
+ *
+ * @description Implementa todas as operações de autenticação incluindo registro, login, logout e gerenciamento de tokens JWT.
+ * Oferece integração segura com backend, validação de dados, sanitização de inputs e tratamento de erros.
+ *
  * @author Victor Macêdo
  * @version 1.0.0
  * @since 2025-10-22
- * 
+ *
  * @requires fetch
  * @requires jwt-utils
- * 
+ *
  * @features
  * - Registro de novos usuários médicos
  * - Login com email/CRM e senha
@@ -17,12 +18,26 @@
  * - Validação de CPF e CRM
  * - Gerenciamento de tokens JWT
  * - Interceptação de erros de rede
- * 
+ *
  * @security
  * - Tokens armazenados no localStorage
  * - Validação de dados no client e server
  * - Sanitização de inputs
  * - Rate limiting prevention
+ *
+ * @example
+ * await authService.login({ email: 'user@exemplo.com', senha: '123456' });
+ *
+ * // Edge case: Se o token JWT expirar, o usuário será deslogado automaticamente.
+ * // Limitação: Não há suporte a autenticação via OAuth2.
+ * // Sugestão de melhoria: Adicionar integração com provedores OAuth2 e autenticação multifator.
+ *
+ * @see https://docs.endodata.com/services/authService
+ * @see https://datatracker.ietf.org/doc/html/rfc6749
+ * @remarks
+ * Ideal para telas de login, cadastro e gerenciamento de sessão do usuário.
+ *
+ * @todo Adicionar suporte a OAuth2 e autenticação multifator.
  */
 
 /**

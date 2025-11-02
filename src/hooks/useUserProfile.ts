@@ -12,6 +12,7 @@ export interface UserProfile {
   especialidade?: string
   isAdministrador: boolean
   createdAt: string
+  phone?: string // Adicionado para refletir o telefone do usuário
 }
 
 /**

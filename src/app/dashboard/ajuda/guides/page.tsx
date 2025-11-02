@@ -1,8 +1,6 @@
-"use client";
-import React from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { HelpLayout } from '@/components/help/HelpLayout';
-import { KnowledgeBase } from '@/components/help/KnowledgeBase';
+import { GuidesList } from '@/components/help/Guide';
 import { Book, HelpCircle, Code, FileText, FileDown } from 'lucide-react';
 
 const sections = [
@@ -13,16 +11,16 @@ const sections = [
   { id: 'downloads', title: 'Downloads', description: 'Manuais e documentos', href: '/dashboard/ajuda/downloads', icon: <FileDown className="h-5 w-5" /> },
 ];
 
-const articles = [
-  { id: '1', title: 'Gestão de Pacientes', description: 'Como cadastrar e gerenciar pacientes no sistema', content: '# Gestão de Pacientes...', category: 'Pacientes' },
-  { id: '2', title: 'Sistema de Prescrições', description: 'Como criar e gerenciar prescrições médicas', content: '# Sistema de Prescrições...', category: 'Prescrições' },
+const guides = [
+  { id: '1', title: 'Melhores Práticas para Prescrições', content: `# Melhores Práticas para Prescrições\n\n## 1. Validação de Dados\n- Sempre verifique os dados do paciente\n- Confirme alergias e interações medicamentosas\n- Documente todas as decisões clínicas\n\n## 2. Segurança\n- Use medicamentos da lista padrão\n- Verifique dosagens recomendadas\n- Documente efeitos adversos`, category: 'Prescrições' },
+  { id: '2', title: 'Guia de Prontuário Eletrônico', content: `# Guia de Prontuário Eletrônico\n\n## 1. Organização\n- Mantenha registros cronológicos\n- Use templates padronizados\n- Atualize informações regularmente\n\n## 2. Privacidade\n- Proteja dados sensíveis\n- Compartilhe apenas o necessário\n- Siga normas LGPD`, category: 'Prontuário' },
 ];
 
-export default function AjudaDashboardPage(): React.ReactElement {
+export default function GuidesDashboardPage(): React.ReactElement {
   return (
     <DashboardLayout>
-      <HelpLayout sections={sections} activeSection="knowledge-base">
-        <KnowledgeBase articles={articles} />
+      <HelpLayout sections={sections} activeSection="guides">
+        <GuidesList guides={guides} />
       </HelpLayout>
     </DashboardLayout>
   );

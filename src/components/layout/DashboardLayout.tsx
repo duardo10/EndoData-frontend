@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   Receipt,
-  Search
+  Search,
+  LogIn
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
@@ -65,6 +66,11 @@ const menuItems = [
     icon: Settings,
     label: 'Configurações',
     href: '/dashboard/configuracoes',
+  },
+  {
+    icon: LogIn,
+    label: 'Login',
+    href: '/',
   },
   {
     icon: HelpCircle,

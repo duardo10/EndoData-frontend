@@ -5,7 +5,7 @@
  * prescrições médicas, incluindo funcionalidades avançadas de busca por
  * paciente com autocomplete em tempo real, filtragem por status, seleção
  * múltipla e ações em lote.
- * 
+ * /api/patients/user/{userId}
  * @features
  * - Listagem paginada de prescrições com scroll infinito otimizado
  * - Autocomplete inteligente de pacientes com debounce
@@ -63,6 +63,30 @@ interface StatusMapping {
 // =====================================
 
 export default function PrescricoesPage() {
+  // Helper para extrair userId do token JWT
+  function getUserIdFromToken() {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+    if (!token) return undefined
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      return payload.sub || payload.id || payload.userId
+    } catch {
+      return undefined
+    }
+  }
+
+  const userId = getUserIdFromToken()
+  // Atualiza prescrições ao montar ou ao focar a tela, sempre filtrando por userId
+  useEffect(() => {
+    updateFilters({ userId }) // Filtra imediatamente ao montar
+    const handleFocus = () => {
+      updateFilters({ userId })
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [userId])
   // ===================================== 
   // HOOKS E ESTADOS
   // =====================================
@@ -95,6 +119,8 @@ export default function PrescricoesPage() {
   const [selectedPatient, setSelectedPatient] = useState<any>(null)
   const [isSearchingPatients, setIsSearchingPatients] = useState(false)
   const [showPatientDropdown, setShowPatientDropdown] = useState(false)
+  // Cache de pacientes do usuário logado
+  const [cachedUserPatients, setCachedUserPatients] = useState<any[] | null>(null)
 
   // Estados para modais
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -122,7 +148,8 @@ export default function PrescricoesPage() {
 
     setIsSearchingPatients(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/search?searchText=${encodeURIComponent(searchTerm)}`, {
+      // Busca pacientes do usuário logado
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/user/${userId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           'Content-Type': 'application/json'
@@ -131,7 +158,11 @@ export default function PrescricoesPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setPatientSearchResults(data.patients || [])
+        // Filtra por nome do paciente
+        const filtered = (data || []).filter((patient: any) =>
+          patient.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        setPatientSearchResults(filtered)
         setShowPatientDropdown(true)
       } else {
         setPatientSearchResults([])
@@ -508,6 +539,36 @@ export default function PrescricoesPage() {
                 <Input
                   type="text"
                   value={patientSearchTerm}
+                  onFocus={async () => {
+                    // Se o campo está vazio, mostrar todos os pacientes do usuário logado
+                    if (!patientSearchTerm) {
+                      setIsSearchingPatients(true)
+                      // Se já existe cache, usa ele
+                      if (cachedUserPatients && cachedUserPatients.length > 0) {
+                        setPatientSearchResults(cachedUserPatients)
+                        setShowPatientDropdown(cachedUserPatients.length > 0)
+                        setIsSearchingPatients(false)
+                        return
+                      }
+                      // Se não existe cache, busca e salva
+                      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/user/${userId}`, {
+                        headers: {
+                          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                          'Content-Type': 'application/json'
+                        }
+                      })
+                      if (response.ok) {
+                        const data = await response.json()
+                        setPatientSearchResults(data || [])
+                        setCachedUserPatients(data || [])
+                        setShowPatientDropdown((data || []).length > 0)
+                      } else {
+                        setPatientSearchResults([])
+                        setShowPatientDropdown(false)
+                      }
+                      setIsSearchingPatients(false)
+                    }
+                  }}
                   onChange={(e) => {
                     setPatientSearchTerm(e.target.value)
                     if (!e.target.value) clearPatientSelection()
@@ -606,7 +667,8 @@ export default function PrescricoesPage() {
                   status: statusValue,
                   patientId: selectedPatient?.id || undefined,
                   startDate: startDate,
-                  endDate: endDate
+                  endDate: endDate,
+                  userId
                 })
               }}
             >
@@ -617,7 +679,7 @@ export default function PrescricoesPage() {
               onClick={() => {
                 setFilters({ paciente: '', status: 'Todos', periodo: '' })
                 clearPatientSelection()
-                updateFilters({})
+                updateFilters({ userId })
               }}
             >
               Limpar Filtros

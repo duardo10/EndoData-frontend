@@ -2,8 +2,24 @@ import api from '@/lib/api'
 import { Receipt, ReceiptFilters, MonthlyReceiptReport, CreateReceiptInput, UpdateReceiptInput } from '@/types/receipt'
 
 /**
- * Service para gerenciar operações com receitas (receipts)
- * Integra com o backend NestJS para todas as operações CRUD
+ * Serviço para gerenciar operações com receitas (receipts)
+ *
+ * @description Integra com o backend NestJS para todas as operações CRUD, filtros, paginação e exportação de receitas médicas.
+ * Oferece tratamento de erros, validação de dados e integração segura.
+ *
+ * @example
+ * const receitas = await ReceiptService.getReceipts();
+ *
+ * // Edge case: Se o backend retornar erro 422, o serviço exibe mensagem de dados inválidos.
+ * // Limitação: Não há suporte a exportação de receitas em XLSX.
+ * // Sugestão de melhoria: Adicionar exportação em XLSX e integração com sistemas de farmácia.
+ *
+ * @see https://docs.endodata.com/services/receiptService
+ * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
+ * @remarks
+ * Ideal para telas de listagem, cadastro, edição e exportação de receitas médicas.
+ *
+ * @todo Adicionar exportação de receitas em XLSX e integração com sistemas externos.
  */
 export class ReceiptService {
   

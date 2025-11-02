@@ -166,7 +166,7 @@ export default function CadastroPage() {
    * quando o usuário digita nos campos de entrada. Utiliza spread operator
    * para manter a imutabilidade do estado.
    * 
-   * @param {keyof FormData} field - Nome do campo a ser atualizado
+   * @param {keyof RegisterData} field - Nome do campo a ser atualizado
    * @param {string} value - Novo valor do campo
    * 
    * @example
@@ -183,7 +183,7 @@ export default function CadastroPage() {
    * - Sanitização de entrada será implementada
    * - Validação de tipo TypeScript
    */
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  const handleInputChange = (field: keyof RegisterData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -227,21 +227,17 @@ export default function CadastroPage() {
    * ```
    */
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Reset de estados
-    setError('')
-    setSuccess('')
-    setIsLoading(true)
-    
+    e.preventDefault();
+
+    setError('');
+    setSuccess('');
+    setIsLoading(true);
+
     try {
-      // Chama o serviço de autenticação
-      const result = await authService.register(formData)
-      
+      const result = await authService.register(formData);
+
       if (result.success) {
-        setSuccess(result.message)
-        
-        // Limpa formulário
+        setSuccess(result.message);
         setFormData({
           nome: '',
           cpf: '',
@@ -249,26 +245,43 @@ export default function CadastroPage() {
           crm: '',
           senha: '',
           confirmarSenha: ''
-        })
-        
-        // Redireciona para login após 2 segundos
+        });
         setTimeout(() => {
-          router.push('/')
-        }, 2000)
-        
+          router.push('/');
+        }, 2000);
       } else {
-        setError(result.message)
-        if (result.errors && result.errors.length > 0) {
-          setError(result.errors.join(', '))
+        // Erros conhecidos de campos repetidos
+        const msg = (result.message || '').toLowerCase();
+        if (result.errors && result.errors.includes('NETWORK_ERROR')) {
+          setError('Servidor indisponível, tente novamente mais tarde.');
+        } else if (msg.includes('e-mail já cadastrado') || msg.includes('email já cadastrado')) {
+          setError('E-mail já cadastrado. Tente fazer login ou recuperar a senha.');
+        } else if (msg.includes('cpf já cadastrado')) {
+          setError('CPF já cadastrado. Tente fazer login ou recuperar a senha.');
+        } else if (msg.includes('crm já cadastrado')) {
+          setError('CRM já cadastrado. Tente fazer login ou recuperar a senha.');
+        } else if (result.errors && result.errors.length > 0) {
+          setError(result.errors.join(', '));
+        } else if (result.message) {
+          setError(result.message);
+        } else {
+          setError('Erro ao registrar. Tente novamente.');
         }
       }
-      
-    } catch (error) {
-      console.error('Erro no cadastro:', error)
-      setError('Erro inesperado. Tente novamente.')
-      
+    } catch (error: any) {
+      // Captura erros de validação lançados pelo frontend
+      if (typeof error === 'string') {
+        setError(error);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Erro inesperado. Tente novamente.');
+      }
+      // Não exibe NETWORK_ERROR se for erro de validação local
+      // Apenas loga o erro para debug
+      console.error('Erro no cadastro:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 

@@ -427,7 +427,7 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
         if(medicalInfo.condicoesPreExistentes) payload.medicalHistory = medicalInfo.condicoesPreExistentes;
         if(medicalInfo.alergias) payload.allergies = medicalInfo.alergias;
         await PatientService.createPatient(payload)
-        alert('Novo paciente cadastrado com sucesso!')
+    alert('Novo paciente cadastrado com sucesso!')
         // Limpar dados do formulário após cadastro bem-sucedido
         clearFormData()
       } catch (err: any) {
@@ -443,7 +443,7 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
     <div className="space-y-6">
       {/* Formulário principal em duas colunas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-  {/* Coluna esquerda - Informações Pessoais */}
+        {/* Coluna esquerda - Informações Pessoais */}
   <Card className="p-6 bg-white border border-gray-100 shadow-sm">
           <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
             <UserPlus className="w-5 h-5 mr-2 text-[#2074E9]" />
@@ -612,7 +612,7 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
           </div>
         </Card>
 
-  {/* Coluna direita - Dados Médicos */}
+        {/* Coluna direita - Dados Médicos */}
   <Card className="p-6 bg-white border border-gray-100 shadow-sm">
           <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
             <Heart className="w-5 h-5 mr-2 text-[#2074E9]" />
@@ -819,23 +819,23 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
 
       {/* Botões de ação */}
       <div className="flex justify-center gap-4 pt-6">
-          <Button
-            onClick={savePatientInfo}
-            className="bg-[#2074E9] hover:bg-[#1a5bb8] text-white px-8 py-3"
+        <Button
+          onClick={savePatientInfo}
+          className="bg-[#2074E9] hover:bg-[#1a5bb8] text-white px-8 py-3"
             disabled={saving}
-          >
-            <Save className="w-5 h-5 mr-2" />
+        >
+          <Save className="w-5 h-5 mr-2" />
             {saving ? 'Salvando...' : (patientId ? 'Atualizar Paciente' : 'Salvar Informações do Paciente')}
-          </Button>
+        </Button>
         
         {!patientId && (
-          <Button
-            onClick={saveAsNewPatient}
-            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3"
-          >
-            <UserPlus className="w-5 h-5 mr-2" />
-            Salvar como Novo Paciente
-          </Button>
+        <Button
+          onClick={saveAsNewPatient}
+          className="bg-green-600 hover:bg-green-700 text-white px-8 py-3"
+        >
+          <UserPlus className="w-5 h-5 mr-2" />
+          Salvar como Novo Paciente
+        </Button>
         )}
       </div>
       {error && (
@@ -844,4 +844,3 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
     </div>
   )
 }
-

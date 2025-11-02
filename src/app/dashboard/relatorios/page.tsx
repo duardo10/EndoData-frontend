@@ -19,6 +19,35 @@ import { Badge } from '@/components/ui/badge'
 const COLORS = ['#2074E9', '#34D399', '#F59E42', '#F43F5E']
 
 export default function Relatorios(): React.ReactElement {
+  const handleExport = () => {
+    let content = `<div style='font-family:sans-serif;padding:24px;'>`;
+    content += `<h2>Relatório</h2>`;
+    if (user) {
+      content += `<p><b>Médico:</b> ${user.name} (${user.especialidade})<br/><b>CRM:</b> ${user.crm}</p>`;
+    }
+    if (metrics) {
+      content += `<h3>Resumo de Receitas</h3>`;
+      content += `<p><b>Receitas Emitidas no Mês:</b> ${metrics.monthlyReceipts}</p>`;
+      content += `<p><b>Receita Total do Mês:</b> R$ ${metrics.monthlyRevenue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>`;
+      content += `<p><b>Valor Médio das Receitas:</b> R$ ${metrics.averageReceiptValue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>`;
+    }
+    if (topMedications && topMedications.medications.length > 0) {
+      content += `<h3>Medicamentos mais prescritos</h3><ul>`;
+      topMedications.medications.forEach((med: { name: string; totalPrescriptions: number; percent: number }) => {
+        content += `<li>${med.name} - ${med.totalPrescriptions} prescrições (${med.percent}%)</li>`;
+      });
+      content += `</ul>`;
+    }
+    content += `</div>`;
+    const printWindow = window.open('', '', 'width=700,height=600');
+    if (printWindow) {
+      printWindow.document.write(content);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+  }
 
   const [periodo, setPeriodo] = useState('2025')
   const [busca, setBusca] = useState('')
@@ -28,17 +57,32 @@ export default function Relatorios(): React.ReactElement {
   const [loading, setLoading] = useState(true)
   const { user, loading: loadingUser } = useUserProfile()
 
-  useEffect(() => {
+  // Mapeia os dados do backend para o formato esperado pelo PieChart
+  const pieData = (topMedications?.medications || []).map(med => ({
+    name: med.name,
+    value: med.totalPrescriptions,
+    percentage: med.percent
+  }))
+
+  // Função para buscar dados do dashboard do banco JPA
+  const fetchDashboardData = async () => {
     setLoading(true)
-    Promise.all([
-      getDashboardMetrics(),
-      getWeeklyPatientsChart(12),
-      getTopMedications(4, 6),
-    ]).then(([metricsData, weeklyData, medsData]) => {
+    try {
+      const [metricsData, weeklyData, medsData] = await Promise.all([
+        getDashboardMetrics(),
+        getWeeklyPatientsChart(12),
+        getTopMedications(4, 6),
+      ])
       setMetrics(metricsData)
       setWeeklyPatients(weeklyData)
       setTopMedications(medsData)
-    }).finally(() => setLoading(false))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDashboardData()
   }, [])
 
 
@@ -62,27 +106,12 @@ export default function Relatorios(): React.ReactElement {
               <CardDescription className="text-gray-700 mt-1">Acompanhe métricas, gráficos e exporte relatórios para tomada de decisão.</CardDescription>
             </div>
             <div className="flex gap-2 items-center">
-              <Input
-                type="search"
-                placeholder="Buscar paciente, prescrição..."
-                className="w-56"
-                value={busca}
-                onChange={e => setBusca(e.target.value)}
-              />
-              <Input
-                type="number"
-                min="2020"
-                max="2025"
-                value={periodo}
-                onChange={e => setPeriodo(e.target.value)}
-                className="w-24"
-                aria-label="Ano do relatório"
-              />
-              <Button variant="outline" className="gap-2">
-                <CalendarDays className="w-4 h-4" /> Filtrar
-              </Button>
-              <Button variant="secondary" className="gap-2">
+              <Button variant="secondary" className="gap-2" onClick={handleExport}>
                 <FileDown className="w-4 h-4" /> Exportar
+              </Button>
+              <Button variant="ghost" className="gap-2" onClick={fetchDashboardData} disabled={loading}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582M20 20v-5h-.581M5.635 19.364A9 9 0 104.582 9.582" /></svg>
+                Atualizar Dados
               </Button>
             </div>
           </div>
@@ -134,7 +163,8 @@ export default function Relatorios(): React.ReactElement {
                   <div className="flex items-center gap-2 mb-2">
                     <Badge variant="secondary">Financeiro</Badge>
                   </div>
-                  <CardTitle className="text-lg text-gray-700">Receita do Mês</CardTitle>
+                  <CardTitle className="text-lg text-gray-700">Receita do Mês (apenas receitas pagas)</CardTitle>
+                  <CardDescription className="text-xs text-gray-500 mt-1">Exibe apenas o valor das receitas com status <b>"pago"</b> no mês atual.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <span className="text-4xl font-bold text-[#2074E9]">R$ {metrics.monthlyRevenue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
@@ -172,24 +202,28 @@ export default function Relatorios(): React.ReactElement {
             </CardHeader>
             <CardContent>
               <div className="h-64 flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={topMedications?.medications || []}
-                      dataKey="totalPrescriptions"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label
-                    >
-                      {(topMedications?.medications || []).map((entry, idx) => (
-                        <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+                {(pieData.length === 0 || pieData.every(item => item.value === 0)) ? (
+                  <span className="text-gray-500 text-lg">Sem dados para exibir</span>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label
+                      >
+                        {pieData.map((entry, idx) => (
+                          <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>
