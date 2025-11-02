@@ -130,7 +130,7 @@ export default function ReceitasPage() {
       const updatePayload = { status: receiptData.status }
       
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/receipts/${selectedReceipt.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000/api'}/receipts/${selectedReceipt.id}`,
         {
           method: 'PUT',
           headers: {
@@ -214,7 +214,7 @@ export default function ReceitasPage() {
       for (const receiptId of selectedReceipts) {
         try {
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/receipts/${receiptId}`,
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000/api'}/receipts/${receiptId}`,
             {
               method: 'DELETE',
               headers: {

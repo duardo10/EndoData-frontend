@@ -4,7 +4,7 @@ Este script permite cadastrar 50 pacientes no backend usando os CPFs fornecidos.
 
 ## Pré-requisitos
 
-1. Backend rodando em `http://localhost:3001`
+1. Backend rodando em `http://209.145.59.215:3001`
 2. Token JWT válido de um usuário autenticado
 3. Node.js instalado
 

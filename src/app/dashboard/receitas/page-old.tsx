@@ -169,7 +169,7 @@ export default function ReceitasPage() {
         userId = payload.userId || payload.id || payload.sub;
       }
       if (!userId) return;
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/user/${userId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000/api'}/patients/user/${userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -306,7 +306,7 @@ export default function ReceitasPage() {
         setIsSearchingPatients(false);
         return;
       }
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/user/${userId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000/api'}/patients/user/${userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -873,7 +873,7 @@ export default function ReceitasPage() {
 
       for (const receiptId of selectedReceipts) {
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/receipts/${receiptId}`, {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000/api'}/receipts/${receiptId}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -983,7 +983,7 @@ export default function ReceitasPage() {
       
       console.log('📤 Enviando para API:', updatePayload)
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/receipts/${selectedReceipt.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000/api'}/receipts/${selectedReceipt.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

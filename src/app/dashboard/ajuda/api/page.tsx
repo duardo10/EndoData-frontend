@@ -31,7 +31,7 @@ export default function APIDashboardPage(): React.ReactElement {
                     Documentação interativa completa da API
                   </p>
                 </div>
-                <a href="http://localhost:4000/api/docs" target="_blank" rel="noopener noreferrer">
+                <a href="http://209.145.59.215:4000/api/docs" target="_blank" rel="noopener noreferrer">
                   <Button>
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Abrir Swagger

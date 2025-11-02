@@ -7,7 +7,7 @@
  * 3. Execute: node scripts/create-bulk-patients.js
  */
 
-const API_BASE_URL = 'http://localhost:4000/api'
+const API_BASE_URL = 'http://209.145.59.215:4000/api'
 
 // Lista de CPFs fornecidos
 const cpfs = [
@@ -259,7 +259,7 @@ async function createBulkPatients() {
       if (errorCount === 1) {
         console.log('\n🔍 PAUSANDO para análise do primeiro erro...')
         console.log('Verifique:')
-        console.log('1. Se o backend está rodando em http://localhost:3001')
+        console.log('1. Se o backend está rodando em http://209.145.59.215:3001')
         console.log('2. Se o token JWT ainda é válido')
         console.log('3. Se o endpoint /patients existe')
         break

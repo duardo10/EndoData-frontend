@@ -40,7 +40,7 @@ import axios, { AxiosError } from 'axios';
  */
 const api = axios.create({
   // URL base da API - usa variável de ambiente ou fallback local
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000/api',
   
   // Headers padrão para todas as requisições
   headers: {

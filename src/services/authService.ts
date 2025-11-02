@@ -83,7 +83,7 @@ export interface AuthResponse {
 /**
  * Configuração base da API
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000'
 
 /**
  * Modo de simulação para desenvolvimento

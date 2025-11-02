@@ -84,7 +84,7 @@ const handleRemoveSelected = async () => {
     // Remover receitas sequencialmente
     for (const receiptId of selectedReceipts) {
       try {
-        const response = await fetch(`http://localhost:4000/api/receipts/${receiptId}`, {
+        const response = await fetch(`http://209.145.59.215:4000/api/receipts/${receiptId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -183,7 +183,7 @@ const searchPatients = async (searchTerm: string) => {
   try {
     const token = localStorage.getItem('auth_token')
     const response = await fetch(
-      `http://localhost:4000/api/patients/search?q=${encodeURIComponent(searchTerm)}`,
+      `http://209.145.59.215:4000/api/patients/search?q=${encodeURIComponent(searchTerm)}`,
       {
         headers: { 'Authorization': `Bearer ${token}` }
       }
@@ -349,7 +349,7 @@ const handlePrintAllReceipts = async () => {
   try {
     const token = localStorage.getItem('auth_token')
     const response = await fetch(
-      'http://localhost:4000/api/receipts?limit=1000',
+      'http://209.145.59.215:4000/api/receipts?limit=1000',
       {
         headers: { 'Authorization': `Bearer ${token}` }
       }

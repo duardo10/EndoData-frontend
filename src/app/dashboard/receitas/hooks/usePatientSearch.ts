@@ -49,7 +49,7 @@ export function usePatientSearch() {
       if (!userId) return
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/user/${userId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000/api'}/patients/user/${userId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -95,7 +95,7 @@ export function usePatientSearch() {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/user/${userId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000/api'}/patients/user/${userId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,

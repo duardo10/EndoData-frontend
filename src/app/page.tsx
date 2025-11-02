@@ -19,7 +19,7 @@ import LoginForm from '@/components/auth/LoginForm'
  * 
  * @example
  * Acesso via URL:
- * - http://localhost:3000/ (desenvolvimento)
+ * - http://209.145.59.215:3000/ (desenvolvimento)
  * - https://endodata.com/ (produção)
  * 
  * @author EndoData Team

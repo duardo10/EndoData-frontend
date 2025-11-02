@@ -43,7 +43,7 @@ export default function CalculosClinicos(): React.ReactElement {
         return
       }
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/calculations/bmr`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000/api'}/calculations/bmr`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

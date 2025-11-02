@@ -115,7 +115,7 @@ Dashboard (/dashboard)
 
 ### 1. **Login**
 
-- Acesse `http://localhost:3002`
+- Acesse `http://209.145.59.215:3002`
 - Digite qualquer email/senha
 - Clique "Entrar"
 

@@ -12,7 +12,7 @@
    npm run dev
    ```
 
-3. Acesse: [http://localhost:3000](http://localhost:3000)
+3. Acesse: [http://209.145.59.215:3000](http://209.145.59.215:3000)
 
 ## Configuração de Ambiente
 

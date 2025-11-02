@@ -149,7 +149,7 @@ export default function PrescricoesPage() {
     setIsSearchingPatients(true)
     try {
       // Busca pacientes do usuário logado
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/user/${userId}`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000/api'}/patients/user/${userId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
           'Content-Type': 'application/json'
@@ -245,7 +245,7 @@ export default function PrescricoesPage() {
       }
 
       for (const prescriptionId of selectedPrescriptions) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/prescriptions/${prescriptionId}`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000/api'}/prescriptions/${prescriptionId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -299,7 +299,7 @@ export default function PrescricoesPage() {
         return
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/prescriptions?limit=1000&page=1`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000/api'}/prescriptions?limit=1000&page=1`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -551,7 +551,7 @@ export default function PrescricoesPage() {
                         return
                       }
                       // Se não existe cache, busca e salva
-                      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/patients/user/${userId}`, {
+                      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000/api'}/patients/user/${userId}`, {
                         headers: {
                           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
                           'Content-Type': 'application/json'

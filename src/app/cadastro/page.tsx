@@ -19,7 +19,7 @@
  * 
  * @example
  * // Acesso direto via URL
- * // http://localhost:3000/cadastro
+ * // http://209.145.59.215:3000/cadastro
  * 
  * @features
  * - Formulário responsivo de cadastro médico
