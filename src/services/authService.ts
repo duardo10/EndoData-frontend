@@ -5,7 +5,7 @@
  * Oferece integração segura com backend, validação de dados, sanitização de inputs e tratamento de erros.
  *
  * @author Victor Macêdo
- * @version 1.0.0
+ * @version 1.0.1
  * @since 2025-10-22
  *
  * @requires fetch
@@ -27,10 +27,6 @@
  *
  * @example
  * await authService.login({ email: 'user@exemplo.com', senha: '123456' });
- *
- * // Edge case: Se o token JWT expirar, o usuário será deslogado automaticamente.
- * // Limitação: Não há suporte a autenticação via OAuth2.
- * // Sugestão de melhoria: Adicionar integração com provedores OAuth2 e autenticação multifator.
  *
  * @see https://docs.endodata.com/services/authService
  * @see https://datatracker.ietf.org/doc/html/rfc6749
@@ -86,11 +82,6 @@ export interface AuthResponse {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000'
 
 /**
- * Modo de simulação para desenvolvimento
- */
-const SIMULATE_API = process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_API_URL
-
-/**
  * Headers padrão para requisições
  */
 const getDefaultHeaders = () => ({
@@ -134,38 +125,6 @@ class AuthService {
     try {
       // Validações client-side
       this.validateRegisterData(userData)
-
-      // Simulação para desenvolvimento (quando backend não está rodando)
-      if (SIMULATE_API) {
-        console.log('🚀 SIMULAÇÃO: Dados do cadastro recebidos:', userData)
-        
-        // Simula delay da API
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        // Simula resposta de sucesso
-        const mockUser = {
-          id: '123',
-          email: userData.email.trim().toLowerCase(),
-          cpf: userData.cpf.replace(/\D/g, ''),
-          crm: userData.crm.toUpperCase().trim(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-        
-        const mockToken = 'mock_jwt_token_' + Date.now()
-        
-        localStorage.setItem('auth_token', mockToken)
-        localStorage.setItem('user_data', JSON.stringify(mockUser))
-        
-        return {
-          success: true,
-          message: '✅ Conta criada com sucesso! (Modo simulação)',
-          data: {
-            user: mockUser,
-            token: mockToken
-          }
-        }
-      }
 
       const requestData = {
         nome: userData.nome?.trim() || 'Médico', // Nome padrão se não fornecido
