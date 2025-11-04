@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter, Roboto } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { QueryProvider } from '@/components/providers/QueryProvider';
 import { ConditionalLayout } from '@/components/layout/ConditionalLayout';
 
 /**
@@ -78,16 +79,18 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.className} ${roboto.variable}`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <ConditionalLayout>
-            {children}
-          </ConditionalLayout>
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <ConditionalLayout>
+              {children}
+            </ConditionalLayout>
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );
