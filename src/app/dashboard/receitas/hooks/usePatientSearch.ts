@@ -2,11 +2,12 @@
  * Hook customizado para busca e seleção de pacientes
  * Gerencia o estado de busca, resultados e seleção de pacientes
  * 
- * VERSÃO OTIMIZADA COM REACT QUERY
+ * VERSÃO OTIMIZADA COM REACT QUERY + DEBOUNCING
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { usePatientsSearch } from '@/hooks/queries/usePatientsQuery'
+import { useDebouncedValue } from '@/hooks/useDebounce'
 
 interface Patient {
   id: string
@@ -25,6 +26,9 @@ export function usePatientSearch() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [showPatientDropdown, setShowPatientDropdown] = useState(false)
 
+  // Debounce automático do valor de busca (300ms de delay)
+  const debouncedSearchTerm = useDebouncedValue(patientSearchTerm, 300)
+
   // Extrair userId do token
   function getUserId() {
     try {
@@ -40,46 +44,49 @@ export function usePatientSearch() {
 
   const userId = getUserId()
 
-  // Hook React Query para buscar pacientes (com cache automático!)
+  // Hook React Query usa o termo debouncado (com cache automático!)
   const {
     data: patientSearchResults = [],
     isLoading: isSearchingPatients,
     error
-  } = usePatientsSearch(userId, patientSearchTerm)
+  } = usePatientsSearch(userId, debouncedSearchTerm)
 
   // Controla visibilidade do dropdown
   useEffect(() => {
     if (patientSearchTerm && !selectedPatient) {
       setShowPatientDropdown(true)
+    } else if (!patientSearchTerm) {
+      setShowPatientDropdown(false)
     }
   }, [patientSearchTerm, selectedPatient])
 
   /**
    * Funções de manipulação (mantidas para compatibilidade)
    */
-  const handlePatientSearchChange = (value: string) => {
+  const handlePatientSearchChange = useCallback((value: string) => {
     setPatientSearchTerm(value)
     if (selectedPatient) {
       setSelectedPatient(null)
     }
-  }
+  }, [selectedPatient])
 
-  const handlePatientSelect = (patient: Patient) => {
+  const handlePatientSelect = useCallback((patient: Patient) => {
     setSelectedPatient(patient)
     setPatientSearchTerm(patient.name)
     setShowPatientDropdown(false)
-  }
+  }, [])
 
-  const clearPatientSelection = () => {
+  const clearPatientSelection = useCallback(() => {
     setSelectedPatient(null)
     setPatientSearchTerm('')
     setShowPatientDropdown(false)
-  }
+  }, [])
 
   return {
     // Estados
     patientSearchResults,
     patientSearchTerm,
+    debouncedSearchTerm,
     selectedPatient,
     isSearchingPatients,
     showPatientDropdown,
