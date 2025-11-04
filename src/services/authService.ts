@@ -36,6 +36,9 @@
  * @todo Adicionar suporte a OAuth2 e autenticação multifator.
  */
 
+import api from '@/lib/api'
+import { AxiosError } from 'axios'
+
 /**
  * Interface para dados de cadastro de usuário médico
  */
@@ -80,30 +83,6 @@ export interface AuthResponse {
 }
 
 /**
- * Configuração base da API
- */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://209.145.59.215:4000'
-
-/**
- * Headers padrão para requisições
- */
-const getDefaultHeaders = () => ({
-  'Content-Type': 'application/json',
-  'Accept': 'application/json',
-})
-
-/**
- * Headers com autenticação
- */
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('auth_token')
-  return {
-    ...getDefaultHeaders(),
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  }
-}
-
-/**
  * Classe de serviço de autenticação
  */
 class AuthService {
@@ -142,21 +121,30 @@ class AuthService {
 
       console.log('📤 Dados enviados para o backend:', requestData)
 
-      const response = await fetch(`${API_BASE_URL}/users`, {
-        method: 'POST',
-        headers: getDefaultHeaders(),
-        body: JSON.stringify(requestData)
-      })
+      const response = await api.post('/users', requestData)
+      console.log('📥 Resposta do backend:', { status: response.status, data: response.data })
 
-      const data = await response.json()
-      console.log('📥 Resposta do backend:', { status: response.status, data })
+      // Armazena token se retornado
+      if (response.data.token) {
+        localStorage.setItem('auth_token', response.data.token)
+        localStorage.setItem('user_data', JSON.stringify(response.data.user))
+      }
 
-      if (!response.ok) {
-        // Tratamento de erros mais amigável
+      return {
+        success: true,
+        message: 'Conta criada com sucesso!',
+        data: response.data
+      }
+
+    } catch (error: unknown) {
+      console.error('Erro no registro:', error)
+      
+      // Tratamento específico para erros do Axios
+      if (error instanceof AxiosError && error.response) {
+        const data = error.response.data
         let errorMessage = 'Erro ao criar conta'
         
-        if (response.status === 400) {
-          // Mostra a mensagem específica do backend se disponível
+        if (error.response.status === 400) {
           if (data.message) {
             errorMessage = data.message
           } else if (data.errors && data.errors.length > 0) {
@@ -164,12 +152,11 @@ class AuthService {
           } else {
             errorMessage = 'Dados inválidos. Verifique os campos preenchidos.'
           }
-        } else if (response.status === 409) {
+        } else if (error.response.status === 409) {
           errorMessage = 'Email, CPF ou CRM já cadastrado. Tente fazer login.'
-        } else if (response.status === 404) {
+        } else if (error.response.status === 404) {
           errorMessage = 'Serviço temporariamente indisponível. Tente novamente.'
         } else if (data.message) {
-          // Se o backend retornar uma mensagem específica, use ela
           errorMessage = data.message
         }
         
@@ -179,21 +166,7 @@ class AuthService {
           errors: data.errors || []
         }
       }
-
-      // Armazena token se retornado
-      if (data.token) {
-        localStorage.setItem('auth_token', data.token)
-        localStorage.setItem('user_data', JSON.stringify(data.user))
-      }
-
-      return {
-        success: true,
-        message: 'Conta criada com sucesso!',
-        data: data
-      }
-
-    } catch (error) {
-      console.error('Erro no registro:', error)
+      
       return {
         success: false,
         message: 'Erro de conexão. Verifique sua internet e tente novamente.',
@@ -210,37 +183,32 @@ class AuthService {
    */
   async login(loginData: LoginData): Promise<AuthResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: getDefaultHeaders(),
-        body: JSON.stringify({
-          email: loginData.email.trim().toLowerCase(),
-          password: loginData.senha
-        })
+      const response = await api.post('/auth/login', {
+        email: loginData.email.trim().toLowerCase(),
+        password: loginData.senha
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        return {
-          success: false,
-          message: data.message || 'Erro ao fazer login',
-          errors: data.errors || []
-        }
-      }
-
       // Armazena dados de autenticação
-      localStorage.setItem('auth_token', data.token)
-      localStorage.setItem('user_data', JSON.stringify(data.user))
+      localStorage.setItem('auth_token', response.data.token)
+      localStorage.setItem('user_data', JSON.stringify(response.data.user))
 
       return {
         success: true,
         message: 'Login realizado com sucesso!',
-        data: data
+        data: response.data
       }
 
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Erro no login:', error)
+      
+      if (error instanceof AxiosError && error.response) {
+        return {
+          success: false,
+          message: error.response.data.message || 'Erro ao fazer login',
+          errors: error.response.data.errors || []
+        }
+      }
+      
       return {
         success: false,
         message: 'Erro de conexão. Tente novamente.',
