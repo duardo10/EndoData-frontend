@@ -40,12 +40,15 @@
  * Interface para dados de cadastro de usuário médico
  */
 export interface RegisterData {
-  nome?: string
+  nome: string
   cpf: string
   email: string
   crm: string
   senha: string
   confirmarSenha: string
+  login?: string
+  especialidade?: string
+  isAdministrador?: boolean
 }
 
 /**
@@ -127,11 +130,14 @@ class AuthService {
       this.validateRegisterData(userData)
 
       const requestData = {
-        nome: userData.nome?.trim() || 'Médico', // Nome padrão se não fornecido
+        nome: userData.nome.trim(),
         cpf: userData.cpf.replace(/\D/g, ''), // Remove formatação
         email: userData.email.trim().toLowerCase(),
         crm: userData.crm.toUpperCase().trim(),
-        senha: userData.senha
+        senha: userData.senha,
+        ...(userData.login && { login: userData.login.trim() }),
+        ...(userData.especialidade && { especialidade: userData.especialidade.trim() }),
+        ...(userData.isAdministrador !== undefined && { isAdministrador: userData.isAdministrador })
       }
 
       console.log('📤 Dados enviados para o backend:', requestData)

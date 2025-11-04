@@ -31,9 +31,12 @@
  * - Design consistente com design system
  * 
  * @fields
+ * - Nome: Nome completo do médico (obrigatório)
+ * - Login: Nome de usuário para acesso (opcional)
  * - CPF: Documento de identificação (formato: 000.000.000-00)
  * - Email: Endereço de email válido
  * - CRM: Registro profissional (formato: 0000000-UF)
+ * - Especialidade: Área de especialização médica (opcional)
  * - Senha: Mínimo 8 caracteres
  * - Confirmar Senha: Validação de confirmação
  * 
@@ -73,29 +76,38 @@ import { authService, type RegisterData } from '@/services/authService'
  * @description Define a estrutura de dados para o formulário de cadastro médico,
  * incluindo validações de tipo e formato esperado para cada campo.
  * 
+ * @property {string} nome - Nome completo do médico
  * @property {string} cpf - CPF do médico (formato: 000.000.000-00)
  * @property {string} email - Email profissional válido
  * @property {string} crm - Número do CRM com UF (formato: 0000000-UF)
  * @property {string} senha - Senha com mínimo 8 caracteres
  * @property {string} confirmarSenha - Confirmação da senha (deve ser idêntica)
+ * @property {string} login - Login do usuário (opcional)
+ * @property {string} especialidade - Especialidade médica (opcional)
  * 
  * @example
  * ```typescript
  * const formData: FormData = {
+ *   nome: 'Dr. João Silva',
  *   cpf: '123.456.789-00',
  *   email: 'dr.joao@clinica.com.br',
  *   crm: '1234567-SP',
  *   senha: 'MinhaSenh@123',
- *   confirmarSenha: 'MinhaSenh@123'
+ *   confirmarSenha: 'MinhaSenh@123',
+ *   login: 'dr.joao',
+ *   especialidade: 'Endocrinologia'
  * }
  * ```
  */
 interface FormData {
+  nome: string
   cpf: string
   email: string
   crm: string
   senha: string
   confirmarSenha: string
+  login?: string
+  especialidade?: string
 }
 
 /**
@@ -152,7 +164,9 @@ export default function CadastroPage() {
     email: '',
     crm: '',
     senha: '',
-    confirmarSenha: ''
+    confirmarSenha: '',
+    login: '',
+    especialidade: ''
   })
   
   const [isLoading, setIsLoading] = useState(false)
@@ -244,7 +258,9 @@ export default function CadastroPage() {
           email: '',
           crm: '',
           senha: '',
-          confirmarSenha: ''
+          confirmarSenha: '',
+          login: '',
+          especialidade: ''
         });
         setTimeout(() => {
           router.push('/');
@@ -358,7 +374,7 @@ export default function CadastroPage() {
             {/* Nome */}
             <div className="textbox">
               <Label htmlFor="nome" className="label block text-sm font-medium text-gray-700 mb-1">
-                Nome Completo
+                Nome Completo *
               </Label>
               <Input
                 id="nome"
@@ -372,10 +388,26 @@ export default function CadastroPage() {
               />
             </div>
 
+            {/* Login */}
+            <div className="textbox">
+              <Label htmlFor="login" className="label block text-sm font-medium text-gray-700 mb-1">
+                Login (opcional)
+              </Label>
+              <Input
+                id="login"
+                name="login"
+                type="text"
+                placeholder="Seu nome de usuário"
+                value={formData.login}
+                onChange={(e) => handleInputChange('login', e.target.value)}
+                className="textbox-input w-full h-[45px] px-3 font-[Open_Sans] text-sm font-normal bg-white rounded-md border border-[#DEE1E6] outline-none transition-colors hover:border-[#DEE1E6] focus:border-[#DEE1E6] focus:ring-0 disabled:text-[#565D6D] disabled:bg-white disabled:border-[#DEE1E6]"
+              />
+            </div>
+
             {/* CPF */}
             <div className="textbox">
               <Label htmlFor="cpf" className="label block text-sm font-medium text-gray-700 mb-1">
-                CPF
+                CPF *
               </Label>
               <Input
                 id="cpf"
@@ -392,7 +424,7 @@ export default function CadastroPage() {
             {/* Email */}
             <div className="textbox">
               <Label htmlFor="email" className="label block text-sm font-medium text-gray-700 mb-1">
-                E-mail
+                E-mail *
               </Label>
               <Input
                 id="email"
@@ -409,7 +441,7 @@ export default function CadastroPage() {
             {/* CRM */}
             <div className="textbox">
               <Label htmlFor="crm" className="label block text-sm font-medium text-gray-700 mb-1">
-                CRM
+                CRM *
               </Label>
               <Input
                 id="crm"
@@ -423,10 +455,26 @@ export default function CadastroPage() {
               />
             </div>
 
+            {/* Especialidade */}
+            <div className="textbox">
+              <Label htmlFor="especialidade" className="label block text-sm font-medium text-gray-700 mb-1">
+                Especialidade (opcional)
+              </Label>
+              <Input
+                id="especialidade"
+                name="especialidade"
+                type="text"
+                placeholder="Ex: Endocrinologia, Cardiologia"
+                value={formData.especialidade}
+                onChange={(e) => handleInputChange('especialidade', e.target.value)}
+                className="textbox-input w-full h-[45px] px-3 font-[Open_Sans] text-sm font-normal bg-white rounded-md border border-[#DEE1E6] outline-none transition-colors hover:border-[#DEE1E6] focus:border-[#DEE1E6] focus:ring-0 disabled:text-[#565D6D] disabled:bg-white disabled:border-[#DEE1E6]"
+              />
+            </div>
+
             {/* Senha */}
             <div className="textbox">
               <Label htmlFor="senha" className="label block text-sm font-medium text-gray-700 mb-1">
-                Senha
+                Senha *
               </Label>
               <Input
                 id="senha"
@@ -443,7 +491,7 @@ export default function CadastroPage() {
             {/* Confirmar Senha */}
             <div className="textbox">
               <Label htmlFor="confirmarSenha" className="label block text-sm font-medium text-gray-700 mb-1">
-                Confirmar Senha
+                Confirmar Senha *
               </Label>
               <Input
                 id="confirmarSenha"
