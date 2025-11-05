@@ -96,10 +96,24 @@ export default function ReceitasPage() {
   // RECEITAS FILTRADAS
   // =====================================
   
-  const filteredReceipts = receipts.filter(receipt =>
-    Array.isArray(patientSearchResults) && 
-    patientSearchResults.some(p => p.id === receipt.patient?.id)
-  )
+  const filteredReceipts = receipts.filter(receipt => {
+    // Se há um paciente selecionado, filtrar por ele
+    if (selectedPatient) {
+      return receipt.patient?.id === selectedPatient.id
+    }
+    
+    // Se não há paciente selecionado, mostrar todas as receitas
+    return true
+  })
+
+  // Debug para verificar os dados
+  console.log('🔍 Debug receitas:', {
+    totalReceipts: receipts.length,
+    filteredReceipts: filteredReceipts.length,
+    selectedPatient: selectedPatient?.name,
+    loading: loading.fetching,
+    error: error
+  })
 
   // =====================================
   // HANDLERS

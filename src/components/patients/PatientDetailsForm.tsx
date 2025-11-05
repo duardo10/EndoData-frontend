@@ -396,8 +396,26 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
         const validWeight = medicalInfo.peso && /^\d{1,3}(\.\d{1,2})?$/.test(medicalInfo.peso) ? medicalInfo.peso : undefined;
         const validHeight = medicalInfo.altura && /^\d{1,3}(\.\d)?$/.test(medicalInfo.altura) ? medicalInfo.altura : undefined;
 
-        // Data ISO do input date (já é, mas garantir formato)
+        // Data ISO do input date (garantir que não está vazio)
         const birthDate = personalInfo.dataNascimento ? personalInfo.dataNascimento : undefined;
+        
+        // Validar campos obrigatórios antes de enviar
+        if (!personalInfo.nomeCompleto.trim()) {
+          setError('Nome completo é obrigatório');
+          return;
+        }
+        if (!personalInfo.cpf.trim()) {
+          setError('CPF é obrigatório');
+          return;
+        }
+        if (!birthDate) {
+          setError('Data de nascimento é obrigatória');
+          return;
+        }
+        if (!userId) {
+          setError('Erro de autenticação - usuário não encontrado');
+          return;
+        }
 
         // Limpar CPF e telefone
         const cleanCpf = personalInfo.cpf ? personalInfo.cpf.replace(/\D/g, '') : '';
@@ -410,12 +428,16 @@ export function PatientDetailsForm({ patientId }: Props): React.ReactElement {
         const bloodType = validBloodTypes.includes(medicalInfo.tipoSanguineo) ? medicalInfo.tipoSanguineo : undefined;
 
         const payload: any = {
-          name: personalInfo.nomeCompleto,
+          name: personalInfo.nomeCompleto.trim(),
           cpf: cleanCpf,
           birthDate,
           gender: mapGender(personalInfo.sexo),
           userId,
         };
+        
+        // Debug do payload
+        console.log('📤 Dados enviados para criação de paciente:', payload);
+        
         if(personalInfo.email) payload.email = personalInfo.email;
         if(cleanPhone) payload.phone = cleanPhone;
         if(personalInfo.bairro) payload.neighborhood = personalInfo.bairro;
