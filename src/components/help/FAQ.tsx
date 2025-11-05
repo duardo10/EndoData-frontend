@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -24,6 +27,15 @@ interface FAQProps {
  * usando o componente Accordion do shadcn/ui
  */
 export function FAQ({ items }: FAQProps) {
+  const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
+
+  const toggleItem = (itemId: string) => {
+    setOpenItems(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
+    }));
+  };
+
   // Agrupar por categoria
   const categories = items.reduce((acc, item) => {
     if (!acc[item.category]) {
@@ -45,16 +57,23 @@ export function FAQ({ items }: FAQProps) {
           <Card key={category} className="p-6">
             <h2 className="text-lg font-semibold mb-4">{category}</h2>
             <Accordion type="single" collapsible className="w-full">
-              {questions.map((item, index) => (
-                <AccordionItem key={index} value={`item-${index}`}>
-                  <AccordionTrigger className="text-left">
-                    {item.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
-                    {item.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
+              {questions.map((item, index) => {
+                const itemId = `${category}-${index}`;
+                return (
+                  <AccordionItem key={index} value={`item-${index}`}>
+                    <AccordionTrigger 
+                      className="text-left"
+                      open={openItems[itemId] || false}
+                      onClick={() => toggleItem(itemId)}
+                    >
+                      {item.question}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">
+                      {item.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
             </Accordion>
           </Card>
         ))}

@@ -13,10 +13,10 @@ interface Patient {
   id: string
   name: string
   cpf: string
-  birthDate: string
-  gender: string
-  email: string
-  phone: string
+  birthDate?: string
+  gender?: string
+  email?: string
+  phone?: string
   createdAt?: string
   updatedAt?: string
 }

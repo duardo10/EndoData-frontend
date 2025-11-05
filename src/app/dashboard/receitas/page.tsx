@@ -61,7 +61,7 @@ export default function ReceitasPage() {
     showPatientDropdown,
     setPatientSearchTerm,
     setShowPatientDropdown,
-    selectPatient,
+    handlePatientSelect: selectPatient,
     clearPatientSelection
   } = usePatientSearch()
 
