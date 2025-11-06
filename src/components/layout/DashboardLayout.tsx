@@ -15,7 +15,8 @@ import {
   X,
   Receipt,
   Search,
-  LogIn
+  LogIn,
+  LogOut
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
@@ -68,8 +69,8 @@ const menuItems = [
     href: '/dashboard/configuracoes',
   },
   {
-    icon: LogIn,
-    label: 'Login',
+    icon: LogOut,
+    label: 'Sair',
     href: '/',
   },
   {
